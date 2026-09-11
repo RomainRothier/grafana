@@ -49,6 +49,19 @@ jest.mock('@grafana/ui/unstable', () => ({
   ),
 }));
 
+const mermaidRender = jest
+  .fn()
+  .mockResolvedValue({ svg: '<svg xmlns="http://www.w3.org/2000/svg"><text>A</text></svg>' });
+
+jest.mock('mermaid', () => ({
+  __esModule: true,
+  default: {
+    initialize: jest.fn(),
+    parse: jest.fn().mockResolvedValue(true),
+    render: (...args: unknown[]) => mermaidRender(...args),
+  },
+}));
+
 const replaceVariablesMock = jest.fn();
 const defaultProps = createProps(replaceVariablesMock);
 
@@ -308,6 +321,7 @@ describe('TextNGPanel', () => {
     });
 
     it('does not render the inline editor in view mode', () => {
+      replaceVariablesMock.mockImplementation((str: string) => str);
       const props = Object.assign({}, defaultProps, {
         options: { content: '# Hello', mode: TextMode.Markdown },
       });
@@ -355,8 +369,8 @@ describe('TextNGPanel', () => {
     // Reports the row context it was handed, so these assert the wiring rather
     // than re-testing macro resolution (covered in renderContent.test.ts).
     const reportRowContext: InterpolateFunction = (target, scopedVars) => {
-      const context = scopedVars?.__dataContext?.value;
-      return context ? `row-${context.rowIndex}` : target;
+      const rowIndex = scopedVars?.__dataContext?.value.rowIndex;
+      return rowIndex === undefined ? target : `row-${rowIndex}`;
     };
 
     function setupWithData(renderMode?: RenderMode) {
