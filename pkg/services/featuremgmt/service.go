@@ -22,12 +22,13 @@ var (
 
 func ProvideManagerService(cfg *setting.Cfg) (*FeatureManager, error) {
 	mgmt := &FeatureManager{
-		isDevMod: cfg.IsDevEnv(),
-		flags:    make(map[string]*FeatureFlag, 30),
-		enabled:  make(map[string]bool),
-		startup:  make(map[string]bool),
-		warnings: make(map[string]string),
-		log:      log.New("featuremgmt"),
+		isDevMod:  cfg.IsDevEnv(),
+		flags:     make(map[string]*FeatureFlag, 30),
+		enabled:   make(map[string]bool),
+		startup:   make(map[string]bool),
+		overrides: make(map[string]bool),
+		warnings:  make(map[string]string),
+		log:       log.New("featuremgmt"),
 	}
 
 	// Register the standard flags

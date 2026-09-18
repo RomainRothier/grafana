@@ -11770,6 +11770,26 @@
       "render-image": "Generate image"
     }
   },
+  "labs": {
+    "column": {
+      "description": "Description",
+      "enabled": "Enabled",
+      "name": "Name",
+      "stage": "Stage"
+    },
+    "empty": "No feature flags found",
+    "load-error": "Failed to load feature flags.",
+    "load-error-title": "Could not load feature flags",
+    "reload-button": "Reload",
+    "runtime-note": "Changes apply at runtime and are not written to configuration. A page reload may be required before frontend features pick up the new value.",
+    "runtime-note-title": "Runtime only",
+    "search-placeholder": "Search feature flags",
+    "toggle-error": "Failed to update {{name}}.",
+    "toggle-error-title": "Could not update feature flag",
+    "toggle-label": "Toggle {{name}}",
+    "toggle-success-body": "Reload the page to apply frontend changes.",
+    "toggle-success-title": "{{name}} updated"
+  },
   "live": {
     "dashboard-changed-modal": {
       "continue-editing": "Continue editing",

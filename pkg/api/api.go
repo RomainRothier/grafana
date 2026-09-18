@@ -114,6 +114,7 @@ func (hs *HTTPServer) registerRoutes() {
 	r.Get("/dashboard/import/", reqSignedIn, hs.Index)
 	r.Get("/configuration", reqGrafanaAdmin, hs.Index)
 	r.Get("/admin", reqOrgAdmin, hs.Index)
+	r.Get("/labs", authorize(ac.EvalPermission(ac.ActionFeatureManagementRead)), hs.Index)
 	r.Get("/admin/settings", authorize(ac.EvalPermission(ac.ActionSettingsRead, ac.ScopeSettingsAll)), hs.Index)
 	r.Get("/admin/users", authorize(ac.EvalAny(ac.EvalPermission(ac.ActionOrgUsersRead), ac.EvalPermission(ac.ActionUsersRead, ac.ScopeGlobalUsersAll))), hs.Index)
 	r.Get("/admin/users/create", authorize(ac.EvalPermission(ac.ActionUsersCreate)), hs.Index)
@@ -530,6 +531,11 @@ func (hs *HTTPServer) registerRoutes() {
 			annotationsRoute.Patch("/:annotationId", authorize(ac.EvalPermission(ac.ActionAnnotationsWrite, ac.ScopeAnnotationsID)), routing.Wrap(hs.PatchAnnotation))
 			annotationsRoute.Post("/graphite", authorize(ac.EvalPermission(ac.ActionAnnotationsCreate, ac.ScopeAnnotationsTypeOrganization)), routing.Wrap(hs.PostGraphiteAnnotation))
 			annotationsRoute.Get("/tags", authorize(ac.EvalPermission(ac.ActionAnnotationsRead)), routing.Wrap(hs.GetAnnotationTags))
+		})
+
+		apiRoute.Group("/labs", func(labsRoute routing.RouteRegister) {
+			labsRoute.Get("/features", authorize(ac.EvalPermission(ac.ActionFeatureManagementRead)), routing.Wrap(hs.GetLabsFeatures))
+			labsRoute.Put("/features/:name", authorize(ac.EvalPermission(ac.ActionFeatureManagementWrite)), routing.Wrap(hs.UpdateLabsFeature))
 		})
 
 		apiRoute.Post("/frontend-metrics", routing.Wrap(hs.PostFrontendMetrics))

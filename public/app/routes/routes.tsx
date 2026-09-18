@@ -429,6 +429,11 @@ export function getAppRoutes(): RouteDescriptor[] {
       ),
     },
     {
+      path: '/labs',
+      roles: () => contextSrv.evaluatePermission([AccessControlAction.FeatureManagementRead]),
+      component: SafeDynamicImport(() => import(/* webpackChunkName: "LabsPage" */ 'app/features/labs/LabsPage')),
+    },
+    {
       path: '/admin/upgrading',
       component: SafeDynamicImport(() => import('app/features/admin/UpgradePage')),
     },

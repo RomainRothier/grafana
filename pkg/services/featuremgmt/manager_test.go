@@ -65,4 +65,24 @@ func TestFeatureManager(t *testing.T) {
 		require.False(t, ft.IsEnabledGlobally("b"))
 		require.False(t, ft.IsEnabledGlobally("c"))
 	})
+
+	t.Run("runtime override enables and disables a flag", func(t *testing.T) {
+		ft := WithManager("a", false, "b", true)
+		require.False(t, ft.IsEnabledGlobally("a"))
+		require.True(t, ft.IsEnabledGlobally("b"))
+
+		require.NoError(t, ft.SetEnabled("a", true))
+		require.True(t, ft.IsEnabledGlobally("a"))
+		require.True(t, ft.IsEnabledGlobally("b"))
+
+		require.NoError(t, ft.SetEnabled("b", false))
+		require.False(t, ft.IsEnabledGlobally("b"))
+		require.True(t, ft.IsEnabledGlobally("a"))
+	})
+
+	t.Run("runtime override of unknown flag fails", func(t *testing.T) {
+		ft := WithManager("a", true)
+		require.ErrorIs(t, ft.SetEnabled("missing", true), ErrUnknownFeatureFlag)
+		require.True(t, ft.IsEnabledGlobally("a"))
+	})
 }
