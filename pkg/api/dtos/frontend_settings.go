@@ -322,6 +322,10 @@ type FrontendSettingsDTO struct {
 
 	LocalFileSystemAvailable bool `json:"localFileSystemAvailable"`
 
+	// Empty label means the environment banner is hidden.
+	EnvironmentIndicatorLabel string `json:"environmentIndicatorLabel,omitempty"`
+	EnvironmentIndicatorColor string `json:"environmentIndicatorColor,omitempty"`
+
 	ProvisioningEnabled bool `json:"provisioningEnabled"`
 	// Experimental Scope settings
 	ListScopesEndpoint          string            `json:"listScopesEndpoint"`

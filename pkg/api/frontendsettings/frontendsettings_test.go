@@ -101,6 +101,29 @@ func TestGetBaseFrontendSettings(t *testing.T) {
 		assert.Equal(t, "https://cdn.example.com", settings.PluginsCDNBaseURL)
 	})
 
+	t.Run("maps the environment indicator when it is configured", func(t *testing.T) {
+		cfg := setting.NewCfg()
+		cfg.EnvironmentIndicatorLabel = "staging"
+		cfg.EnvironmentIndicatorColor = "orange"
+
+		license := &licensing.OSSLicensingService{Cfg: cfg}
+
+		settings, err := GetBaseFrontendSettings(newTestReqContext(), cfg, license, nil)
+		require.NoError(t, err)
+		assert.Equal(t, "staging", settings.EnvironmentIndicatorLabel)
+		assert.Equal(t, "orange", settings.EnvironmentIndicatorColor)
+	})
+
+	t.Run("leaves the environment indicator empty when it is unset", func(t *testing.T) {
+		cfg := setting.NewCfg()
+		license := &licensing.OSSLicensingService{Cfg: cfg}
+
+		settings, err := GetBaseFrontendSettings(newTestReqContext(), cfg, license, nil)
+		require.NoError(t, err)
+		assert.Empty(t, settings.EnvironmentIndicatorLabel)
+		assert.Empty(t, settings.EnvironmentIndicatorColor)
+	})
+
 	t.Run("leaves plugins CDN base URL empty when the CDN is disabled", func(t *testing.T) {
 		cfg := setting.NewCfg()
 		license := &licensing.OSSLicensingService{Cfg: cfg}

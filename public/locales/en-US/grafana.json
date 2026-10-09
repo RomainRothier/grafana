@@ -4047,6 +4047,9 @@
     }
   },
   "app-chrome": {
+    "environment-indicator": {
+      "aria-label": "Environment: {{label}}"
+    },
     "skip-content-button": "Skip to main content",
     "top-bar": {
       "sign-in": "Sign in"

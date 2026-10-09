@@ -314,6 +314,10 @@ export interface GrafanaConfig {
   sharedWithMeFolderUID: string;
   rootFolderUID: string;
   localFileSystemAvailable: boolean;
+  /** Banner text. Empty hides the environment indicator. */
+  environmentIndicatorLabel: string;
+  /** Validated hex color or name. Empty uses the default warning color. */
+  environmentIndicatorColor: string;
   provisioningEnabled: boolean;
   cloudMigrationEnabled: boolean;
   cloudMigrationIsTarget: boolean;

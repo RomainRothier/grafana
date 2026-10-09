@@ -8,10 +8,12 @@ import CSSTransition from 'react-transition-group/CSSTransition';
 import { type GrafanaTheme2 } from '@grafana/data';
 import { selectors } from '@grafana/e2e-selectors';
 import { t } from '@grafana/i18n';
+import { config } from '@grafana/runtime';
 import { useFlagGrafanaVisualDesignRefresh } from '@grafana/runtime/internal';
 import { useStyles2, useTheme2 } from '@grafana/ui';
 import { useGrafana } from 'app/core/context/GrafanaContext';
 
+import { environmentIndicatorHeight } from './EnvironmentIndicator/environmentIndicator';
 import { MegaMenu, MENU_WIDTH } from './MegaMenu/MegaMenu';
 import { getChromeHeaderLevelHeight } from './TopBar/useChromeHeaderHeight';
 
@@ -48,7 +50,8 @@ export function AppChromeMenu({}: Props) {
     ref
   );
   const { dialogProps } = useDialog({ 'aria-label': t('navigation.megamenu.dialog-label', 'Navigation') }, ref);
-  const styles = useStyles2(getStyles, visualRefreshEnabled);
+  const bannerHeight = environmentIndicatorHeight(config.environmentIndicatorLabel);
+  const styles = useStyles2(getStyles, visualRefreshEnabled, bannerHeight);
 
   return (
     <div className={styles.wrapper}>
@@ -82,14 +85,15 @@ export function AppChromeMenu({}: Props) {
   );
 }
 
-const getStyles = (theme: GrafanaTheme2, visualRefreshEnabled: boolean) => {
+const getStyles = (theme: GrafanaTheme2, visualRefreshEnabled: boolean, bannerHeight: number) => {
+  const belowChrome = getChromeHeaderLevelHeight() + bannerHeight;
   return {
     backdrop: css({
       bottom: 0,
       left: 0,
       position: 'fixed',
       right: 0,
-      top: `${getChromeHeaderLevelHeight()}px`,
+      top: `${belowChrome}px`,
       zIndex: theme.zIndex.modalBackdrop,
     }),
     menu: css({
@@ -101,7 +105,7 @@ const getStyles = (theme: GrafanaTheme2, visualRefreshEnabled: boolean) => {
       // Needs to below navbar should we change the navbarFixed? add add a new level?
       zIndex: theme.zIndex.modal,
       position: 'fixed',
-      top: `${getChromeHeaderLevelHeight()}px`,
+      top: `${belowChrome}px`,
       borderRight: `1px solid ${theme.colors.border.weak}`,
       backgroundColor: visualRefreshEnabled ? theme.colors.background.canvas : theme.colors.background.primary,
       flex: '1 1 0',

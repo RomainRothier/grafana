@@ -207,4 +207,59 @@ describe('AppChrome', () => {
       expect(screen.queryByTestId(EXTENSION_SIDEBAR_FLOATING_TESTID)).not.toBeInTheDocument();
     });
   });
+
+  describe('environment indicator', () => {
+    const originalLabel = config.environmentIndicatorLabel;
+    const originalColor = config.environmentIndicatorColor;
+
+    afterEach(() => {
+      config.environmentIndicatorLabel = originalLabel;
+      config.environmentIndicatorColor = originalColor;
+    });
+
+    it('does not render a banner or offset the header when the label is unset', async () => {
+      config.environmentIndicatorLabel = '';
+      config.environmentIndicatorColor = '#ff0000';
+      setup(<Page navId="child1">Children</Page>);
+
+      await screen.findByRole('link', { name: 'Skip to main content' });
+      expect(screen.queryByTestId(selectors.components.EnvironmentIndicator.container)).not.toBeInTheDocument();
+      expect(getComputedStyle(document.querySelector('header')!).top).toBe('');
+    });
+
+    it('renders the banner and pushes the header down when the label is set', async () => {
+      config.environmentIndicatorLabel = 'staging';
+      config.environmentIndicatorColor = '';
+      setup(<Page navId="child1">Children</Page>);
+
+      expect(await screen.findByTestId(selectors.components.EnvironmentIndicator.container)).toHaveTextContent(
+        'staging'
+      );
+      await waitFor(() => {
+        expect(getComputedStyle(document.querySelector('header')!).top).toBe('28px');
+      });
+    });
+
+    it('keeps the banner on a chromeless page when the label is set', async () => {
+      config.environmentIndicatorLabel = 'production';
+      // AppChrome starts chromeless. Skip Page, which would turn chrome back on for this route.
+      const context = getGrafanaContextMock();
+      const wrapper = getWrapper({ grafanaContext: context, renderWithRouter: true });
+
+      render(
+        <KBarProvider>
+          <AppChrome>
+            <div>Children</div>
+          </AppChrome>
+        </KBarProvider>,
+        { wrapper }
+      );
+
+      expect(await screen.findByRole('region', { name: 'Environment: production' })).toHaveTextContent('production');
+      expect(screen.queryByRole('link', { name: 'Skip to main content' })).not.toBeInTheDocument();
+      const content = document.querySelector('[class*="page-content"]');
+      expect(content).not.toBeNull();
+      expect(getComputedStyle(content!).paddingTop).toBe('28px');
+    });
+  });
 });

@@ -254,6 +254,8 @@ export class GrafanaBootConfig {
   sharedWithMeFolderUID?: string;
   rootFolderUID?: string;
   localFileSystemAvailable?: boolean;
+  environmentIndicatorLabel = '';
+  environmentIndicatorColor = '';
   provisioningEnabled = true;
   cloudMigrationEnabled?: boolean;
   cloudMigrationIsTarget?: boolean;

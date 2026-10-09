@@ -1316,6 +1316,11 @@ export const versionedComponents = {
       '10.4.0': 'data-testid remove all transformations button',
     },
   },
+  EnvironmentIndicator: {
+    container: {
+      '13.3.0': 'data-testid Environment indicator',
+    },
+  },
   NavBar: {
     Configuration: {
       button: {

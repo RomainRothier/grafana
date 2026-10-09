@@ -7,7 +7,7 @@ import { createPortal } from 'react-dom';
 
 import { type GrafanaTheme2, store } from '@grafana/data';
 import { Trans } from '@grafana/i18n';
-import { locationSearchToObject, locationService, useScopes } from '@grafana/runtime';
+import { config, locationSearchToObject, locationService, useScopes } from '@grafana/runtime';
 import { useFlagGrafanaVisualDesignRefresh } from '@grafana/runtime/internal';
 import { ErrorBoundaryAlert, floatingUtils, getDragStyles, LinkButton, useStyles2 } from '@grafana/ui';
 import { SplashScreenModal } from 'app/core/components/SplashScreenModal/SplashScreenModal';
@@ -18,6 +18,8 @@ import { ScopesDashboards } from 'app/features/scopes/dashboards/ScopesDashboard
 
 import { AppChromeMenu } from './AppChromeMenu';
 import { type AppChromeService, DOCKED_LOCAL_STORAGE_KEY } from './AppChromeService';
+import { EnvironmentIndicator } from './EnvironmentIndicator/EnvironmentIndicator';
+import { environmentIndicatorHeight } from './EnvironmentIndicator/environmentIndicator';
 import {
   ExtensionSidebar,
   MAX_EXTENSION_SIDEBAR_WIDTH,
@@ -79,7 +81,14 @@ export function AppChrome({ children }: Props) {
   );
 
   const headerLevels = useChromeHeaderLevels();
-  const styles = useStyles2(getStyles, headerLevels, getChromeHeaderLevelHeight(), visualRefreshEnabled);
+  const environmentBannerHeight = environmentIndicatorHeight(config.environmentIndicatorLabel);
+  const styles = useStyles2(
+    getStyles,
+    headerLevels,
+    getChromeHeaderLevelHeight(),
+    visualRefreshEnabled,
+    environmentBannerHeight
+  );
   const contentSizeStyles = useStyles2(getContentSizeStyles, extensionSidebarWidth);
   const dragStyles = useStyles2(getDragStyles);
   const isSmallScreen = !useMediaQueryMinWidth('sm');
@@ -117,7 +126,10 @@ export function AppChrome({ children }: Props) {
   }, [chrome, search]);
 
   const fullscreenWorkspaceChrome = (
-    <div id={floatingUtils.BOUNDARY_ELEMENT_ID}>
+    <div
+      id={floatingUtils.BOUNDARY_ELEMENT_ID}
+      className={environmentBannerHeight > 0 ? styles.workspaceWithIndicator : undefined}
+    >
       <FullscreenWorkspaceShell workspaceHostRef={setWorkspaceHost} />
       {workspaceHost &&
         createPortal(
@@ -230,8 +242,15 @@ export function AppChrome({ children }: Props) {
     </div>
   );
 
+  const environmentIndicator = <EnvironmentIndicator />;
+
   if (!fullscreenWorkspaceFeatureFlagEnabled) {
-    return defaultChrome;
+    return (
+      <>
+        {environmentIndicator}
+        {defaultChrome}
+      </>
+    );
   }
 
   // With the fullscreen workspace feature flag enabled, we render either the fullscreen workspace
@@ -241,6 +260,7 @@ export function AppChrome({ children }: Props) {
   // toggling workspace mode moves the page's DOM without remounting it.
   return (
     <>
+      {environmentIndicator}
       {fullscreenWorkspaceActive ? fullscreenWorkspaceChrome : defaultChrome}
       {portalTargetRef.current && createPortal(children, portalTargetRef.current)}
     </>
@@ -271,13 +291,19 @@ function useResponsiveDockedMegaMenu(chrome: AppChromeService) {
   }, [isLargeScreen, chrome, dockedMenuLocalStorageState]);
 }
 
-const getStyles = (theme: GrafanaTheme2, headerLevels: number, headerHeight: number, visualRefreshEnabled: boolean) => {
+const getStyles = (
+  theme: GrafanaTheme2,
+  headerLevels: number,
+  headerHeight: number,
+  visualRefreshEnabled: boolean,
+  environmentBannerHeight: number
+) => {
   return {
     content: css({
       label: 'page-content',
       display: 'flex',
       flexDirection: 'column',
-      paddingTop: headerLevels * headerHeight,
+      paddingTop: headerLevels * headerHeight + environmentBannerHeight,
       flexGrow: 1,
       height: 'auto',
     }),
@@ -286,15 +312,15 @@ const getStyles = (theme: GrafanaTheme2, headerLevels: number, headerHeight: num
       overflow: 'hidden',
     }),
     contentChromeless: css({
-      paddingTop: 0,
+      paddingTop: environmentBannerHeight,
     }),
     dockedMegaMenu: css({
       background: visualRefreshEnabled ? theme.colors.background.canvas : theme.colors.background.primary,
       borderRight: visualRefreshEnabled ? undefined : `1px solid ${theme.colors.border.weak}`,
       display: 'none',
-      height: '100%',
+      height: environmentBannerHeight > 0 ? `calc(100% - ${environmentBannerHeight}px)` : '100%',
       position: 'fixed',
-      top: 0,
+      top: environmentBannerHeight > 0 ? environmentBannerHeight : 0,
       width: MENU_WIDTH,
       zIndex: 2,
 
@@ -305,7 +331,7 @@ const getStyles = (theme: GrafanaTheme2, headerLevels: number, headerHeight: num
     }),
     scopesDashboardsContainer: css({
       position: 'fixed',
-      height: `calc(100% - ${headerHeight}px)`,
+      height: `calc(100% - ${headerHeight + environmentBannerHeight}px)`,
       zIndex: 1,
     }),
     scopesDashboardsContainerDocked: css(
@@ -322,6 +348,8 @@ const getStyles = (theme: GrafanaTheme2, headerLevels: number, headerHeight: num
       zIndex: theme.zIndex.navbarFixed,
       left: 0,
       right: 0,
+      // Omit top when the banner is hidden so the header keeps its static position.
+      top: environmentBannerHeight > 0 ? environmentBannerHeight : undefined,
       background: visualRefreshEnabled ? theme.colors.background.canvas : theme.colors.background.primary,
       flexDirection: 'column',
     }),
@@ -370,18 +398,27 @@ const getStyles = (theme: GrafanaTheme2, headerLevels: number, headerHeight: num
       // the `Resizeable` component overrides the needed `position` and `height`
       // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
       position: 'fixed !important' as 'fixed',
-      top: headerHeight,
+      top: headerHeight + environmentBannerHeight,
       bottom: 0,
       zIndex: theme.zIndex.navbarFixed + 1,
       right: 0,
     }),
     sidebarContainerFloating: css({
       position: 'fixed',
-      top: headerLevels * headerHeight,
+      top: headerLevels * headerHeight + environmentBannerHeight,
       bottom: 0,
       left: 0,
       right: 0,
       zIndex: theme.zIndex.navbarFixed + 1,
+    }),
+    // The workspace shell is 100vh. This wrapper keeps it below the indicator.
+    workspaceWithIndicator: css({
+      height: `calc(100vh - ${environmentBannerHeight}px)`,
+      marginTop: environmentBannerHeight,
+      overflow: 'hidden',
+      '& > div': {
+        height: '100%',
+      },
     }),
     portalHost: css({
       display: 'contents',

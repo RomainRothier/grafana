@@ -376,6 +376,29 @@ exampleHeader2 = exampleValue2
 
 <hr />
 
+### `[environment]`
+
+Identify this Grafana instance in the UI so operators can tell one stack from another.
+
+#### `indicator_label`
+
+Text shown in a banner at the top of every page, for example `dev`, `staging`, or `production`.
+Leave it empty to hide the banner. An instance with an empty label shows no banner and keeps the current page layout.
+
+Grafana trims the label, keeps it on one line, and limits it to 64 characters.
+
+Override it with the `GF_ENVIRONMENT_INDICATOR_LABEL` environment variable.
+
+#### `indicator_color`
+
+Optional color for the banner. Use a hex color (`#RGB` or `#RRGGBB`) or one of `blue`, `green`, `orange`, `red`, or `purple`.
+
+When you leave it empty, or the value is not a supported color, the banner uses the warning color. An invalid color does not hide the banner.
+
+Override it with the `GF_ENVIRONMENT_INDICATOR_COLOR` environment variable.
+
+<hr />
+
 ### `[database]`
 
 Grafana needs a database to store users and dashboards (and other

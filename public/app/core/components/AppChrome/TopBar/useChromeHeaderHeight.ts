@@ -5,6 +5,7 @@ import { useGrafana } from 'app/core/context/GrafanaContext';
 import { useMediaQueryMinWidth } from 'app/core/hooks/useMediaQueryMinWidth';
 
 import { type AppChromeState } from '../AppChromeService';
+import { environmentIndicatorHeight } from '../EnvironmentIndicator/environmentIndicator';
 import { useExtensionSidebarContext } from '../ExtensionSidebar/ExtensionSidebarProvider';
 
 /**
@@ -80,12 +81,13 @@ export function useChromeHeaderHeight() {
 
   // if the extension sidebar is open, the inner pane will be scrollable, thus we need to set the header height to 0
   const { isOpen: isExtensionSidebarOpen } = useExtensionSidebarContext();
+  const bannerHeight = environmentIndicatorHeight(config.environmentIndicatorLabel);
 
   if (isExtensionSidebarOpen) {
     return 0;
   }
 
-  return levels * getChromeHeaderLevelHeight();
+  return levels * getChromeHeaderLevelHeight() + bannerHeight;
 }
 
 /**
