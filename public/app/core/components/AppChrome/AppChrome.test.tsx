@@ -213,15 +213,18 @@ describe('AppChrome', () => {
       expect(await screen.findByRole('status', { name: 'Environment: staging' })).toHaveTextContent('staging');
     });
 
-    it('keeps the banner on chromeless pages when a label is set', async () => {
+    it('keeps the banner in kiosk mode when a label is set', async () => {
       config.environmentIndicatorName = 'dev';
       config.environmentIndicatorColor = '';
       const { context } = setup(<Page navId="child1">Children</Page>);
+
+      expect(await screen.findByRole('link', { name: 'Skip to main content' })).toBeInTheDocument();
+
       act(() => {
-        context.chrome.update({ chromeless: true });
+        context.chrome.update({ kioskMode: KioskMode.Full });
       });
 
-      expect(await screen.findByRole('status', { name: 'Environment: dev' })).toHaveTextContent('dev');
+      expect(screen.getByRole('status', { name: 'Environment: dev' })).toHaveTextContent('dev');
       await waitFor(() => {
         expect(screen.queryByRole('link', { name: 'Skip to main content' })).not.toBeInTheDocument();
       });
