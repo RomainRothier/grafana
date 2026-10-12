@@ -276,6 +276,11 @@ export class GrafanaBootConfig {
 
   openFeatureContext: Record<string, unknown> = {};
 
+  /** Label for the environment banner. Empty hides the banner. */
+  environmentIndicatorName = '';
+  /** Optional banner color. Empty uses the default amber color. */
+  environmentIndicatorColor = '';
+
   constructor(
     options: BootData['settings'] & {
       bootData: BootData;

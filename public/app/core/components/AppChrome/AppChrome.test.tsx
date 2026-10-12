@@ -16,6 +16,7 @@ import { backendSrv } from '../../services/backend_srv';
 import { Page } from '../Page/Page';
 
 import { AppChrome, EXTENSION_SIDEBAR_FLOATING_TESTID } from './AppChrome';
+import { ENVIRONMENT_INDICATOR_TEST_ID } from './EnvironmentIndicator/EnvironmentIndicator';
 import {
   type ExtensionSidebarContextType,
   useExtensionSidebarContext,
@@ -182,6 +183,47 @@ describe('AppChrome', () => {
 
       await waitFor(() => {
         expect(parseFloat(getComputedStyle(mainContent).paddingLeft) || 0).toBe(0);
+      });
+    });
+  });
+
+  describe('environment indicator', () => {
+    const originalName = config.environmentIndicatorName;
+    const originalColor = config.environmentIndicatorColor;
+
+    afterEach(() => {
+      config.environmentIndicatorName = originalName;
+      config.environmentIndicatorColor = originalColor;
+    });
+
+    it('does not render a banner when the environment label is unset', async () => {
+      config.environmentIndicatorName = '';
+      config.environmentIndicatorColor = '';
+      setup(<Page navId="child1">Children</Page>);
+
+      expect(await screen.findByRole('link', { name: 'Skip to main content' })).toBeInTheDocument();
+      expect(screen.queryByTestId(ENVIRONMENT_INDICATOR_TEST_ID)).not.toBeInTheDocument();
+    });
+
+    it('renders the configured label at the top of the page', async () => {
+      config.environmentIndicatorName = 'staging';
+      config.environmentIndicatorColor = '#112233';
+      setup(<Page navId="child1">Children</Page>);
+
+      expect(await screen.findByRole('status', { name: 'Environment: staging' })).toHaveTextContent('staging');
+    });
+
+    it('keeps the banner on chromeless pages when a label is set', async () => {
+      config.environmentIndicatorName = 'dev';
+      config.environmentIndicatorColor = '';
+      const { context } = setup(<Page navId="child1">Children</Page>);
+      act(() => {
+        context.chrome.update({ chromeless: true });
+      });
+
+      expect(await screen.findByRole('status', { name: 'Environment: dev' })).toHaveTextContent('dev');
+      await waitFor(() => {
+        expect(screen.queryByRole('link', { name: 'Skip to main content' })).not.toBeInTheDocument();
       });
     });
   });

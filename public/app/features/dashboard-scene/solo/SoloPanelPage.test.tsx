@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { useParams } from 'react-router-dom-v5-compat';
 import { getWrapper } from 'test/test-utils';
 
+import { config } from '@grafana/runtime';
 import { SceneTimeRange, VizPanel } from '@grafana/scenes';
 
 import { getDashboardScenePageStateManager } from '../pages/DashboardScenePageStateManager';
@@ -211,6 +212,31 @@ describe('SoloPanelPage', () => {
 
       const logo = screen.getByTestId('solo-panel-logo');
       expect(logo).toHaveAttribute('data-hovered', 'false');
+    });
+
+    describe('environment indicator offset', () => {
+      const originalName = config.environmentIndicatorName;
+
+      afterEach(() => {
+        config.environmentIndicatorName = originalName;
+        config.environmentIndicatorColor = '';
+      });
+
+      it('keeps the panel flush with the viewport when no label is set', () => {
+        config.environmentIndicatorName = '';
+        const dashboard = createMockDashboard();
+        render(<SoloPanelRenderer dashboard={dashboard} panelId="panel-1" hideLogo={undefined} />);
+
+        expect(screen.getByTestId('solo-panel-page')).toHaveStyle({ top: '0px' });
+      });
+
+      it('starts the panel below the banner when a label is set', () => {
+        config.environmentIndicatorName = 'staging';
+        const dashboard = createMockDashboard();
+        render(<SoloPanelRenderer dashboard={dashboard} panelId="panel-1" hideLogo={undefined} />);
+
+        expect(screen.getByTestId('solo-panel-page')).toHaveStyle({ top: '24px' });
+      });
     });
   });
 });

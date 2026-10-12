@@ -61,6 +61,8 @@ func NewFSRequestConfig(ctx context.Context, cfg *setting.Cfg, license licensing
 		LdapEnabled:                          cfg.LDAPAuthEnabled,
 		LoginHint:                            cfg.LoginHint,
 		PasswordHint:                         cfg.PasswordHint,
+		EnvironmentIndicatorName:             cfg.EnvironmentIndicatorName,
+		EnvironmentIndicatorColor:            cfg.EnvironmentIndicatorColor,
 		ReportingStaticContext:               cfg.ReportingStaticContext,
 		RudderstackConfigUrl:                 cfg.RudderstackConfigURL,
 		RudderstackDataPlaneUrl:              cfg.RudderstackDataPlaneURL,
@@ -163,6 +165,7 @@ func (c *FSRequestConfig) ApplyOverrides(settings *ini.File, logger log.Logger, 
 	// TODO: We should apply all overrides for values in FSRequestConfig
 	applyStringSlice(settings, "security", "allow_embedding_hosts", &c.AllowEmbeddingHosts, logger)
 	applyStringSlice(settings, "security", "form_action_additional_hosts", &c.FormActionAdditionalHosts, logger)
+	c.applyEnvironmentIndicatorOverrides(settings, logger, fullFrontendSettingsEnabled)
 
 	if fullFrontendSettingsEnabled && c.FullFrontendSettings == nil {
 		// Guard against a misconfigured call: when the flag is enabled the caller is
@@ -187,6 +190,35 @@ func (c *FSRequestConfig) ApplyOverrides(settings *ini.File, logger log.Logger, 
 		applyString(settings, "analytics", "rudderstack_v3_sdk_url", &c.RudderstackV3SdkUrl, logger)
 		applyString(settings, "analytics", "rudderstack_config_url", &c.RudderstackConfigUrl, logger)
 		applyString(settings, "analytics", "rudderstack_integrations_url", &c.RudderstackIntegrationsUrl, logger)
+	}
+}
+
+func (c *FSRequestConfig) applyEnvironmentIndicatorOverrides(settings *ini.File, logger log.Logger, fullFrontendSettingsEnabled bool) {
+	nameTarget := &c.EnvironmentIndicatorName
+	colorTarget := &c.EnvironmentIndicatorColor
+	if fullFrontendSettingsEnabled {
+		if c.FullFrontendSettings == nil {
+			return
+		}
+		nameTarget = &c.FullFrontendSettings.EnvironmentIndicatorName
+		colorTarget = &c.FullFrontendSettings.EnvironmentIndicatorColor
+	}
+
+	if key := getValue(settings, "environment", "indicator_name"); key != nil {
+		name, ok := setting.SanitizeEnvironmentIndicatorName(key.String())
+		if !ok {
+			logger.Warn("ignoring invalid environment indicator_name override")
+		} else {
+			*nameTarget = name
+		}
+	}
+	if key := getValue(settings, "environment", "indicator_color"); key != nil {
+		color, ok := setting.SanitizeEnvironmentIndicatorColor(key.String())
+		if !ok {
+			logger.Warn("ignoring invalid environment indicator_color override")
+		} else {
+			*colorTarget = color
+		}
 	}
 }
 

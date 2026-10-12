@@ -352,6 +352,16 @@ export interface GrafanaConfig {
     enabled: boolean;
     presenceIndicatorsDisabled?: boolean;
   };
+
+  /**
+   * Label for the environment banner. Empty or omitted hides the banner.
+   */
+  environmentIndicatorName?: string;
+  /**
+   * Optional banner color: #RGB, #RRGGBB, or red, orange, yellow, green, blue, purple.
+   * Empty uses the default amber color.
+   */
+  environmentIndicatorColor?: string;
 }
 
 interface SqlConnectionLimits {

@@ -198,6 +198,63 @@ func TestFSRequestConfig_ApplyOverrides(t *testing.T) {
 
 		assert.Nil(t, config.FullFrontendSettings)
 	})
+
+	t.Run("applies a valid environment indicator override", func(t *testing.T) {
+		config := FSRequestConfig{
+			FSFrontendSettings: FSFrontendSettings{
+				EnvironmentIndicatorName:  "dev",
+				EnvironmentIndicatorColor: "orange",
+			},
+		}
+
+		iniFile := ini.Empty()
+		section, _ := iniFile.NewSection("environment")
+		_, _ = section.NewKey("indicator_name", " staging ")
+		_, _ = section.NewKey("indicator_color", "#ABC")
+
+		config.ApplyOverrides(iniFile, log.New("test"), false)
+
+		assert.Equal(t, "staging", config.EnvironmentIndicatorName)
+		assert.Equal(t, "#abc", config.EnvironmentIndicatorColor)
+	})
+
+	t.Run("keeps the previous environment indicator when the override is invalid", func(t *testing.T) {
+		config := FSRequestConfig{
+			FSFrontendSettings: FSFrontendSettings{
+				EnvironmentIndicatorName:  "staging",
+				EnvironmentIndicatorColor: "#112233",
+			},
+		}
+
+		iniFile := ini.Empty()
+		section, _ := iniFile.NewSection("environment")
+		_, _ = section.NewKey("indicator_name", "<script>alert(1)</script>")
+		_, _ = section.NewKey("indicator_color", "red;background:url(https://evil.test)")
+
+		config.ApplyOverrides(iniFile, log.New("test"), false)
+
+		assert.Equal(t, "staging", config.EnvironmentIndicatorName)
+		assert.Equal(t, "#112233", config.EnvironmentIndicatorColor)
+	})
+
+	t.Run("applies the environment indicator override to full frontend settings", func(t *testing.T) {
+		config := FSRequestConfig{
+			FullFrontendSettings: &dtos.FrontendSettingsDTO{
+				EnvironmentIndicatorName: "dev",
+			},
+		}
+
+		iniFile := ini.Empty()
+		section, _ := iniFile.NewSection("environment")
+		_, _ = section.NewKey("indicator_name", "production")
+		_, _ = section.NewKey("indicator_color", "red")
+
+		config.ApplyOverrides(iniFile, log.New("test"), true)
+
+		assert.Equal(t, "production", config.FullFrontendSettings.EnvironmentIndicatorName)
+		assert.Equal(t, "red", config.FullFrontendSettings.EnvironmentIndicatorColor)
+		assert.Empty(t, config.EnvironmentIndicatorName)
+	})
 }
 
 func TestNewFSRequestConfig(t *testing.T) {
@@ -246,5 +303,18 @@ func TestNewFSRequestConfig(t *testing.T) {
 		// The plugins CDN base URL is sourced from the plugins CDN service.
 		assert.Equal(t, "https://cdn.example.com", config.FullFrontendSettings.PluginsCDNBaseURL)
 		assert.Equal(t, []string{"react-router-dom", "react-router"}, config.FullFrontendSettings.PluginImportTelemetryPackages)
+	})
+
+	t.Run("copies the environment indicator from config", func(t *testing.T) {
+		cfg := newCfg()
+		cfg.EnvironmentIndicatorName = "staging"
+		cfg.EnvironmentIndicatorColor = "#112233"
+		license := &licensing.OSSLicensingService{Cfg: cfg}
+
+		config, err := NewFSRequestConfig(context.Background(), cfg, license, newPluginsCDN(), false)
+		require.NoError(t, err)
+
+		assert.Equal(t, "staging", config.EnvironmentIndicatorName)
+		assert.Equal(t, "#112233", config.EnvironmentIndicatorColor)
 	})
 }

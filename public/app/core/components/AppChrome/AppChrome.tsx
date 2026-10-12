@@ -7,7 +7,7 @@ import { createPortal } from 'react-dom';
 
 import { type GrafanaTheme2, store } from '@grafana/data';
 import { Trans } from '@grafana/i18n';
-import { locationSearchToObject, locationService, useScopes } from '@grafana/runtime';
+import { config, locationSearchToObject, locationService, useScopes } from '@grafana/runtime';
 import { useFlagGrafanaVisualDesignRefresh } from '@grafana/runtime/internal';
 import { ErrorBoundaryAlert, floatingUtils, getDragStyles, LinkButton, useStyles2 } from '@grafana/ui';
 import { SplashScreenModal } from 'app/core/components/SplashScreenModal/SplashScreenModal';
@@ -18,6 +18,8 @@ import { ScopesDashboards } from 'app/features/scopes/dashboards/ScopesDashboard
 
 import { AppChromeMenu } from './AppChromeMenu';
 import { type AppChromeService, DOCKED_LOCAL_STORAGE_KEY } from './AppChromeService';
+import { EnvironmentIndicator } from './EnvironmentIndicator/EnvironmentIndicator';
+import { ENVIRONMENT_INDICATOR_HEIGHT, resolveEnvironmentIndicator } from './EnvironmentIndicator/environmentIndicator';
 import {
   ExtensionSidebar,
   MAX_EXTENSION_SIDEBAR_WIDTH,
@@ -79,7 +81,18 @@ export function AppChrome({ children }: Props) {
   );
 
   const headerLevels = useChromeHeaderLevels();
-  const styles = useStyles2(getStyles, headerLevels, getChromeHeaderLevelHeight(), visualRefreshEnabled);
+  const environmentIndicator = resolveEnvironmentIndicator(
+    config.environmentIndicatorName,
+    config.environmentIndicatorColor
+  );
+  const indicatorHeight = environmentIndicator ? ENVIRONMENT_INDICATOR_HEIGHT : 0;
+  const styles = useStyles2(
+    getStyles,
+    headerLevels,
+    getChromeHeaderLevelHeight(),
+    visualRefreshEnabled,
+    indicatorHeight
+  );
   const contentSizeStyles = useStyles2(getContentSizeStyles, extensionSidebarWidth);
   const dragStyles = useStyles2(getDragStyles);
   const isSmallScreen = !useMediaQueryMinWidth('sm');
@@ -230,8 +243,18 @@ export function AppChrome({ children }: Props) {
     </div>
   );
 
+  const indicator = environmentIndicator ? <EnvironmentIndicator indicator={environmentIndicator} /> : null;
+
   if (!fullscreenWorkspaceFeatureFlagEnabled) {
-    return defaultChrome;
+    if (!indicator) {
+      return defaultChrome;
+    }
+    return (
+      <>
+        {indicator}
+        {defaultChrome}
+      </>
+    );
   }
 
   // With the fullscreen workspace feature flag enabled, we render either the fullscreen workspace
@@ -241,6 +264,7 @@ export function AppChrome({ children }: Props) {
   // toggling workspace mode moves the page's DOM without remounting it.
   return (
     <>
+      {indicator}
       {fullscreenWorkspaceActive ? fullscreenWorkspaceChrome : defaultChrome}
       {portalTargetRef.current && createPortal(children, portalTargetRef.current)}
     </>
@@ -271,13 +295,19 @@ function useResponsiveDockedMegaMenu(chrome: AppChromeService) {
   }, [isLargeScreen, chrome, dockedMenuLocalStorageState]);
 }
 
-const getStyles = (theme: GrafanaTheme2, headerLevels: number, headerHeight: number, visualRefreshEnabled: boolean) => {
+const getStyles = (
+  theme: GrafanaTheme2,
+  headerLevels: number,
+  headerHeight: number,
+  visualRefreshEnabled: boolean,
+  indicatorHeight: number
+) => {
   return {
     content: css({
       label: 'page-content',
       display: 'flex',
       flexDirection: 'column',
-      paddingTop: headerLevels * headerHeight,
+      paddingTop: headerLevels * headerHeight + indicatorHeight,
       flexGrow: 1,
       height: 'auto',
     }),
@@ -286,15 +316,15 @@ const getStyles = (theme: GrafanaTheme2, headerLevels: number, headerHeight: num
       overflow: 'hidden',
     }),
     contentChromeless: css({
-      paddingTop: 0,
+      paddingTop: indicatorHeight,
     }),
     dockedMegaMenu: css({
       background: visualRefreshEnabled ? theme.colors.background.canvas : theme.colors.background.primary,
       borderRight: visualRefreshEnabled ? undefined : `1px solid ${theme.colors.border.weak}`,
       display: 'none',
-      height: '100%',
+      height: indicatorHeight > 0 ? `calc(100% - ${indicatorHeight}px)` : '100%',
       position: 'fixed',
-      top: 0,
+      top: indicatorHeight,
       width: MENU_WIDTH,
       zIndex: 2,
 
@@ -305,7 +335,7 @@ const getStyles = (theme: GrafanaTheme2, headerLevels: number, headerHeight: num
     }),
     scopesDashboardsContainer: css({
       position: 'fixed',
-      height: `calc(100% - ${headerHeight}px)`,
+      height: `calc(100% - ${headerHeight + indicatorHeight}px)`,
       zIndex: 1,
     }),
     scopesDashboardsContainerDocked: css(
@@ -322,6 +352,7 @@ const getStyles = (theme: GrafanaTheme2, headerLevels: number, headerHeight: num
       zIndex: theme.zIndex.navbarFixed,
       left: 0,
       right: 0,
+      ...(indicatorHeight > 0 && { top: indicatorHeight }),
       background: visualRefreshEnabled ? theme.colors.background.canvas : theme.colors.background.primary,
       flexDirection: 'column',
     }),
@@ -370,14 +401,14 @@ const getStyles = (theme: GrafanaTheme2, headerLevels: number, headerHeight: num
       // the `Resizeable` component overrides the needed `position` and `height`
       // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
       position: 'fixed !important' as 'fixed',
-      top: headerHeight,
+      top: headerHeight + indicatorHeight,
       bottom: 0,
       zIndex: theme.zIndex.navbarFixed + 1,
       right: 0,
     }),
     sidebarContainerFloating: css({
       position: 'fixed',
-      top: headerLevels * headerHeight,
+      top: headerLevels * headerHeight + indicatorHeight,
       bottom: 0,
       left: 0,
       right: 0,

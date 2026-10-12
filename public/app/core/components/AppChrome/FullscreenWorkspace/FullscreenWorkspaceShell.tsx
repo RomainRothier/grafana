@@ -9,6 +9,7 @@ import { Button, EmptyState, ErrorBoundary, PageLoader, Stack, useStyles2 } from
 import { useGrafana } from 'app/core/context/GrafanaContext';
 import { useSelector } from 'app/types/store';
 
+import { getEnvironmentIndicatorHeight } from '../EnvironmentIndicator/environmentIndicator';
 import { ProfileButton } from '../TopBar/ProfileButton';
 
 const FULLSCREEN_WORKSPACE_COMPONENT_ID = 'grafana-assistant-app/fullscreen-workspace/v1';
@@ -26,7 +27,8 @@ interface Props {
 }
 export function FullscreenWorkspaceShell({ workspaceHostRef }: Props) {
   const { chrome } = useGrafana();
-  const styles = useStyles2(getStyles);
+  const indicatorHeight = getEnvironmentIndicatorHeight();
+  const styles = useStyles2(getStyles, indicatorHeight);
   const { component: PluginWorkspace, isLoading } = usePluginComponent<FullscreenWorkspaceComponentProps>(
     FULLSCREEN_WORKSPACE_COMPONENT_ID
   );
@@ -142,7 +144,7 @@ export function FullscreenWorkspaceShell({ workspaceHostRef }: Props) {
 // back into <main>, which always works since normal Grafana doesn't depend on the plugin. Reload is
 // offered as a secondary fallback.
 function WorkspaceError({ onExit }: { onExit: () => void }) {
-  const styles = useStyles2(getStyles);
+  const styles = useStyles2(getStyles, 0);
   return (
     <div className={styles.message}>
       <EmptyState
@@ -164,12 +166,16 @@ function WorkspaceError({ onExit }: { onExit: () => void }) {
   );
 }
 
-const getStyles = (theme: GrafanaTheme2) => ({
+const getStyles = (theme: GrafanaTheme2, indicatorHeight: number) => ({
   root: css({
     display: 'flex',
     flexDirection: 'column',
     height: '100vh',
     background: theme.colors.background.canvas,
+    ...(indicatorHeight > 0 && {
+      boxSizing: 'border-box' as const,
+      paddingTop: indicatorHeight,
+    }),
   }),
   message: css({
     display: 'flex',

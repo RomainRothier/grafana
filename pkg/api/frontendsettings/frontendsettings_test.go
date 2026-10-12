@@ -62,6 +62,28 @@ func TestGetBaseFrontendSettings(t *testing.T) {
 		assert.Equal(t, []string{"custom-router", "custom-history"}, settings.PluginImportTelemetryPackages)
 	})
 
+	t.Run("leaves the environment indicator empty when it is unset", func(t *testing.T) {
+		cfg := setting.NewCfg()
+		license := &licensing.OSSLicensingService{Cfg: cfg}
+
+		settings, err := GetBaseFrontendSettings(newTestReqContext(), cfg, license, nil)
+		require.NoError(t, err)
+		assert.Empty(t, settings.EnvironmentIndicatorName)
+		assert.Empty(t, settings.EnvironmentIndicatorColor)
+	})
+
+	t.Run("copies the environment indicator onto frontend settings", func(t *testing.T) {
+		cfg := setting.NewCfg()
+		cfg.EnvironmentIndicatorName = "staging"
+		cfg.EnvironmentIndicatorColor = "#112233"
+		license := &licensing.OSSLicensingService{Cfg: cfg}
+
+		settings, err := GetBaseFrontendSettings(newTestReqContext(), cfg, license, nil)
+		require.NoError(t, err)
+		assert.Equal(t, "staging", settings.EnvironmentIndicatorName)
+		assert.Equal(t, "#112233", settings.EnvironmentIndicatorColor)
+	})
+
 	t.Run("enables trusted types policy when CSP template requires it", func(t *testing.T) {
 		cfg := setting.NewCfg()
 		cfg.CSPEnabled = true

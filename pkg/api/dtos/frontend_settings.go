@@ -322,6 +322,10 @@ type FrontendSettingsDTO struct {
 
 	LocalFileSystemAvailable bool `json:"localFileSystemAvailable"`
 
+	// Environment indicator banner. An empty name hides the banner.
+	EnvironmentIndicatorName  string `json:"environmentIndicatorName,omitempty"`
+	EnvironmentIndicatorColor string `json:"environmentIndicatorColor,omitempty"`
+
 	ProvisioningEnabled bool `json:"provisioningEnabled"`
 	// Experimental Scope settings
 	ListScopesEndpoint          string            `json:"listScopesEndpoint"`

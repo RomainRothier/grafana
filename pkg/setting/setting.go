@@ -481,6 +481,13 @@ type Cfg struct {
 
 	LocalFileSystemAvailable bool
 
+	// EnvironmentIndicatorName is the label on the banner at the top of every page.
+	// Empty hides the banner.
+	EnvironmentIndicatorName string
+	// EnvironmentIndicatorColor is an optional banner color (hex or a named color).
+	// Empty uses the default color.
+	EnvironmentIndicatorColor string
+
 	// Analytics
 	CheckForGrafanaUpdates               bool
 	CheckForPluginUpdates                bool
@@ -1594,6 +1601,7 @@ func (cfg *Cfg) parseINIFile(iniFile *ini.File) error {
 	cfg.StackID = valueAsString(iniFile.Section("environment"), "stack_id", "")
 	cfg.Slug = valueAsString(iniFile.Section("environment"), "stack_slug", "")
 	cfg.LocalFileSystemAvailable = iniFile.Section("environment").Key("local_file_system_available").MustBool(true)
+	cfg.readEnvironmentIndicator(iniFile)
 	cfg.InstanceName = valueAsString(iniFile.Section(""), "instance_name", "unknown_instance_name")
 	plugins := valueAsString(iniFile.Section("paths"), "plugins", "")
 	bundledPlugins := valueAsString(iniFile.Section("paths"), "bundled_plugins", "data/plugins-bundled")

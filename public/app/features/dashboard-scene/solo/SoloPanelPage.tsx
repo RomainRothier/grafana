@@ -7,6 +7,7 @@ import { type GrafanaTheme2, type UrlQueryValue } from '@grafana/data';
 import { t } from '@grafana/i18n';
 import { UrlSyncContextProvider } from '@grafana/scenes';
 import { Alert, Box, useStyles2 } from '@grafana/ui';
+import { getEnvironmentIndicatorHeight } from 'app/core/components/AppChrome/EnvironmentIndicator/environmentIndicator';
 import PageLoader from 'app/core/components/PageLoader/PageLoader';
 import { EntityNotFound } from 'app/core/components/PageNotFound/EntityNotFound';
 import { type GrafanaRouteComponentProps } from 'app/core/navigation/types';
@@ -78,7 +79,8 @@ export function SoloPanelRenderer({
 }) {
   const { controls, body } = dashboard.useState();
   const refreshPicker = controls?.useState()?.refreshPicker;
-  const styles = useStyles2(getStyles);
+  const indicatorHeight = getEnvironmentIndicatorHeight();
+  const styles = useStyles2(getStyles, indicatorHeight);
   const soloPanelContext = useDefineSoloPanelContext(panelId)!;
   const [isHovered, setIsHovered] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -97,6 +99,7 @@ export function SoloPanelRenderer({
     <div
       ref={containerRef}
       className={styles.container}
+      data-testid="solo-panel-page"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -134,7 +137,7 @@ function renderHiddenVariables(dashboard: DashboardScene) {
   );
 }
 
-const getStyles = (theme: GrafanaTheme2) => {
+const getStyles = (_theme: GrafanaTheme2, indicatorHeight: number) => {
   const panelWrapper = css({
     width: '100%',
     height: '100%',
@@ -147,9 +150,9 @@ const getStyles = (theme: GrafanaTheme2) => {
       right: 0,
       margin: 0,
       left: 0,
-      top: 0,
+      top: indicatorHeight,
       width: '100%',
-      height: '100%',
+      height: indicatorHeight > 0 ? `calc(100% - ${indicatorHeight}px)` : '100%',
     }),
     panelWrapper,
   };

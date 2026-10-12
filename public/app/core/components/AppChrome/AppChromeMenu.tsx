@@ -12,6 +12,7 @@ import { useFlagGrafanaVisualDesignRefresh } from '@grafana/runtime/internal';
 import { useStyles2, useTheme2 } from '@grafana/ui';
 import { useGrafana } from 'app/core/context/GrafanaContext';
 
+import { getEnvironmentIndicatorHeight } from './EnvironmentIndicator/environmentIndicator';
 import { MegaMenu, MENU_WIDTH } from './MegaMenu/MegaMenu';
 import { getChromeHeaderLevelHeight } from './TopBar/useChromeHeaderHeight';
 
@@ -48,7 +49,8 @@ export function AppChromeMenu({}: Props) {
     ref
   );
   const { dialogProps } = useDialog({ 'aria-label': t('navigation.megamenu.dialog-label', 'Navigation') }, ref);
-  const styles = useStyles2(getStyles, visualRefreshEnabled);
+  const indicatorHeight = getEnvironmentIndicatorHeight();
+  const styles = useStyles2(getStyles, visualRefreshEnabled, indicatorHeight);
 
   return (
     <div className={styles.wrapper}>
@@ -82,14 +84,15 @@ export function AppChromeMenu({}: Props) {
   );
 }
 
-const getStyles = (theme: GrafanaTheme2, visualRefreshEnabled: boolean) => {
+const getStyles = (theme: GrafanaTheme2, visualRefreshEnabled: boolean, indicatorHeight: number) => {
+  const chromeTop = getChromeHeaderLevelHeight() + indicatorHeight;
   return {
     backdrop: css({
       bottom: 0,
       left: 0,
       position: 'fixed',
       right: 0,
-      top: `${getChromeHeaderLevelHeight()}px`,
+      top: `${chromeTop}px`,
       zIndex: theme.zIndex.modalBackdrop,
     }),
     menu: css({
@@ -101,7 +104,7 @@ const getStyles = (theme: GrafanaTheme2, visualRefreshEnabled: boolean) => {
       // Needs to below navbar should we change the navbarFixed? add add a new level?
       zIndex: theme.zIndex.modal,
       position: 'fixed',
-      top: `${getChromeHeaderLevelHeight()}px`,
+      top: `${chromeTop}px`,
       borderRight: `1px solid ${theme.colors.border.weak}`,
       backgroundColor: visualRefreshEnabled ? theme.colors.background.canvas : theme.colors.background.primary,
       flex: '1 1 0',

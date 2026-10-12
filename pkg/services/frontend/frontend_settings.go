@@ -21,7 +21,10 @@ type FSFrontendSettings struct {
 	DisableUserSignUp  bool   `json:"disableUserSignUp,omitempty"`
 	LoginHint          string `json:"loginHint,omitempty"`
 	PasswordHint       string `json:"passwordHint,omitempty"`
-	AnonymousEnabled   bool   `json:"anonymousEnabled,omitempty"`
+
+	EnvironmentIndicatorName  string `json:"environmentIndicatorName,omitempty"`
+	EnvironmentIndicatorColor string `json:"environmentIndicatorColor,omitempty"`
+	AnonymousEnabled          bool   `json:"anonymousEnabled,omitempty"`
 
 	BuildInfo dtos.FrontendSettingsBuildInfoDTO `json:"buildInfo"`
 
