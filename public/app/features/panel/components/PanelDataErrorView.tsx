@@ -4,6 +4,7 @@ import {
   CoreApp,
   FieldType,
   getPanelDataSummary,
+  LoadingState,
   type GrafanaTheme2,
   type PanelData,
   type PanelDataSummary,
@@ -144,6 +145,13 @@ function getMessageFor(
     return message;
   }
 
+  // A failed query can still carry an empty frame. "No data" hid that error, so it
+  // only showed up in the query inspector.
+  const queryError = queryErrorMessage(data);
+  if (queryError) {
+    return queryError;
+  }
+
   const noData = !hasData(data);
 
   if (showEmptyState) {
@@ -170,6 +178,13 @@ function getMessageFor(
   }
 
   return t('panel.panel-data-error-view.missing-value.unknown', 'Cannot visualize data');
+}
+
+function queryErrorMessage(data: PanelData): string | undefined {
+  if (data.state !== LoadingState.Error) {
+    return undefined;
+  }
+  return data.error?.message || data.errors?.find((err) => err.message)?.message;
 }
 
 const getStyles = (theme: GrafanaTheme2) => {

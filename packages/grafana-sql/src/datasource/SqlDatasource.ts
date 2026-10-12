@@ -34,6 +34,7 @@ import { SqlQueryEditorLazy } from '../components/QueryEditorLazy';
 import { MACRO_NAMES } from '../constants';
 import { type DB, type SQLQuery, type SQLOptions, type SqlQueryModel, QueryFormat, type SQLDialect } from '../types';
 import migrateAnnotation from '../utils/migration';
+import { getSqlMacroError, isSqlMacroFailure, surfaceSqlMacroError } from '../utils/sqlMacros';
 
 export abstract class SqlDatasource extends DataSourceWithBackend<SQLQuery, SQLOptions> {
   uid: string;
@@ -102,7 +103,7 @@ export abstract class SqlDatasource extends DataSourceWithBackend<SQLQuery, SQLO
         const expandedQuery = {
           ...query,
           datasource: this.getRef(),
-          rawSql: this.templateSrv.replace(query.rawSql, scopedVars, this.interpolateVariable),
+          rawSql: this.replaceSql(query.rawSql, scopedVars),
           rawQuery: true,
         };
         return expandedQuery;
@@ -119,7 +120,7 @@ export abstract class SqlDatasource extends DataSourceWithBackend<SQLQuery, SQLO
     return {
       refId: target.refId,
       datasource: this.getRef(),
-      rawSql: this.templateSrv.replace(target.rawSql, scopedVars, this.interpolateVariable),
+      rawSql: this.replaceSql(target.rawSql, scopedVars),
       format: target.format,
     };
   }
@@ -131,6 +132,13 @@ export abstract class SqlDatasource extends DataSourceWithBackend<SQLQuery, SQLO
     if (!!databaseIssue) {
       const error = new Error(databaseIssue);
       return throwError(() => error);
+    }
+
+    // Invalid $__ macros used to be rewritten to macro_error() and executed, so the
+    // panel rendered empty while the message only appeared in the query inspector.
+    const macroIssue = this.checkForSqlMacroIssue(request);
+    if (macroIssue) {
+      return throwError(() => new Error(macroIssue));
     }
 
     request.targets.forEach((target) => {
@@ -146,7 +154,29 @@ export abstract class SqlDatasource extends DataSourceWithBackend<SQLQuery, SQLO
       });
     });
 
-    return super.query(request);
+    return super.query(request).pipe(map((response) => surfaceSqlMacroError(response)));
+  }
+
+  private checkForSqlMacroIssue(request: DataQueryRequest<SQLQuery>) {
+    for (const target of request.targets) {
+      if (target.hide) {
+        continue;
+      }
+      const macroError = getSqlMacroError(target.rawSql);
+      if (macroError) {
+        return macroError;
+      }
+    }
+    return;
+  }
+
+  private replaceSql(rawSql: string | undefined, scopedVars: ScopedVars) {
+    const interpolated = this.templateSrv.replace(rawSql, scopedVars, this.interpolateVariable);
+    const macroError = getSqlMacroError(interpolated);
+    if (macroError) {
+      throw new Error(macroError);
+    }
+    return interpolated;
   }
 
   private checkForDatabaseIssue(request: DataQueryRequest<SQLQuery>) {
@@ -200,7 +230,7 @@ export abstract class SqlDatasource extends DataSourceWithBackend<SQLQuery, SQLO
       ...getSearchFilterScopedVar({ query, wildcardChar: '%', options }),
     };
 
-    const rawSql = this.templateSrv.replace(query, scopedVars, this.interpolateVariable);
+    const rawSql = this.replaceSql(query, scopedVars);
 
     const interpolatedQuery: SQLQuery = {
       refId: refId,
@@ -216,6 +246,9 @@ export abstract class SqlDatasource extends DataSourceWithBackend<SQLQuery, SQLO
       response = await this.runMetaQuery(interpolatedQuery, range);
     } catch (error) {
       console.error(error);
+      if (error instanceof Error && isSqlMacroFailure(error.message)) {
+        throw error;
+      }
       throw new Error('error when executing the sql query');
     }
     return this.getResponseParser().transformMetricFindResponse(response);
@@ -248,6 +281,12 @@ export abstract class SqlDatasource extends DataSourceWithBackend<SQLQuery, SQLO
         .pipe(
           map((res: FetchResponse<BackendDataSourceResponse>) => {
             const rsp = toDataQueryResponse(res, queries);
+            const surfaced = surfaceSqlMacroError(rsp);
+            // Other backend errors still return the frame. Macro failures used to be
+            // dropped here, so variable queries looked empty.
+            if (surfaced.error && isSqlMacroFailure(surfaced.error.message)) {
+              throw new Error(surfaced.error.message ?? 'SQL macro interpolation failed');
+            }
             return rsp.data[0] ?? { fields: [] };
           })
         )

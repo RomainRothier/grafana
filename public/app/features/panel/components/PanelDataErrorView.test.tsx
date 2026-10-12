@@ -149,6 +149,26 @@ describe('PanelDataErrorView', () => {
     expect(screen.getByText('No data')).toBeInTheDocument();
     expect(screen.queryByText(RUN_QUERY_MESSAGE)).not.toBeInTheDocument();
   });
+
+  it('shows the query error message when a SQL macro fails and the frame is empty', () => {
+    renderWithProps({
+      data: {
+        state: LoadingState.Error,
+        series: [
+          {
+            refId: 'A',
+            fields: [],
+            length: 0,
+          },
+        ],
+        timeRange: getDefaultTimeRange(),
+        error: { message: 'missing time column argument for macro $__timeFilter' },
+      },
+    });
+
+    expect(screen.getByText('missing time column argument for macro $__timeFilter')).toBeInTheDocument();
+    expect(screen.queryByText('No data')).not.toBeInTheDocument();
+  });
 });
 
 function renderWithProps(overrides?: Partial<PanelDataErrorViewProps>) {
