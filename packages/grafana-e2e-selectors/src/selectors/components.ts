@@ -1317,6 +1317,11 @@ export const versionedComponents = {
     },
   },
   NavBar: {
+    EnvironmentIndicator: {
+      container: {
+        '13.3.0': 'data-testid environment indicator container',
+      },
+    },
     Configuration: {
       button: {
         '9.5.0': 'Configuration',

@@ -186,6 +186,49 @@ describe('AppChrome', () => {
     });
   });
 
+  describe('environment indicator', () => {
+    const indicator = selectors.components.NavBar.EnvironmentIndicator.container;
+    const original = config.environmentIndicator;
+
+    afterEach(() => {
+      config.environmentIndicator = original;
+    });
+
+    it('leaves the chrome unchanged when no environment name is configured', async () => {
+      config.environmentIndicator = { name: '', color: '#ff0000' };
+      setup(<Page navId="child1">Children</Page>);
+
+      expect(await screen.findByRole('link', { name: 'Skip to main content' })).toBeInTheDocument();
+      expect(screen.queryByTestId(indicator)).not.toBeInTheDocument();
+    });
+
+    it('shows the configured name in the top bar', async () => {
+      config.environmentIndicator = { name: 'Staging', color: '#ff8800' };
+      setup(<Page navId="child1">Children</Page>);
+
+      expect(await screen.findByTestId(indicator)).toHaveTextContent('Staging');
+      expect(screen.getByTestId(indicator)).toHaveStyle({ backgroundColor: '#ff8800' });
+    });
+
+    it('keeps the banner visible in kiosk mode and offsets the page', async () => {
+      config.environmentIndicator = { name: 'Production', color: 'red' };
+      const { context } = setup(<Page navId="child1">Children</Page>);
+
+      act(() => {
+        context.chrome.update({ kioskMode: KioskMode.Full });
+      });
+
+      const banner = await screen.findByTestId(indicator);
+      expect(banner).toHaveTextContent('Production');
+      expect(banner).toHaveStyle({ backgroundColor: '#ff0000' });
+
+      await waitFor(() => {
+        const page = document.getElementById('pageContent')?.parentElement?.parentElement;
+        expect(parseFloat(getComputedStyle(page!).paddingTop)).toBe(28);
+      });
+    });
+  });
+
   describe('extension sidebar mobile floating', () => {
     beforeEach(() => {
       mockUseExtensionSidebarContext.mockReturnValue(openSidebarContext);

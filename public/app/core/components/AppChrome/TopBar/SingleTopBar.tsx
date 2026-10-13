@@ -18,6 +18,7 @@ import { useSelector } from 'app/types/store';
 import { HomeLogo } from '../../Branding/Branding';
 import { Breadcrumbs } from '../../Breadcrumbs/Breadcrumbs';
 import { buildBreadcrumbs } from '../../Breadcrumbs/utils';
+import { EnvironmentIndicator } from '../EnvironmentIndicator/EnvironmentIndicator';
 import { ExtensionToolbarItem } from '../ExtensionSidebar/ExtensionToolbarItem';
 import { LazyFeatureControlButton } from '../FeatureControl/LazyFeatureControl';
 import { AssistantToolbarButtons } from '../FullscreenWorkspace/AssistantToolbarButtons';
@@ -89,6 +90,7 @@ export const SingleTopBar = memo(function SingleTopBar({
             </>
           )}
           {topLevelScopes ? <ScopesSelector /> : undefined}
+          <EnvironmentIndicator variant="inline" />
           <Breadcrumbs breadcrumbs={breadcrumbs} className={styles.breadcrumbsWrapper} />
           {!showToolbarLevel && breadcrumbActions}
         </Stack>

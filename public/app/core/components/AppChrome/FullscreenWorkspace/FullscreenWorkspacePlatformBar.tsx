@@ -10,6 +10,7 @@ import { useSelector } from 'app/types/store';
 
 import { Breadcrumbs } from '../../Breadcrumbs/Breadcrumbs';
 import { buildBreadcrumbs } from '../../Breadcrumbs/utils';
+import { EnvironmentIndicator } from '../EnvironmentIndicator/EnvironmentIndicator';
 import { MegaMenu, MENU_WIDTH } from '../MegaMenu/MegaMenu';
 
 export function FullscreenWorkspacePlatformBar() {
@@ -31,6 +32,7 @@ export function FullscreenWorkspacePlatformBar() {
           aria-expanded={menuOpen}
           onClick={() => setMenuOpen((open) => !open)}
         />
+        <EnvironmentIndicator variant="inline" />
         <Breadcrumbs breadcrumbs={breadcrumbs} className={styles.breadcrumbs} />
       </div>
       {menuOpen && (

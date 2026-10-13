@@ -376,6 +376,31 @@ exampleHeader2 = exampleValue2
 
 <hr />
 
+### `[environment]`
+
+Show a banner in the app chrome so people can tell which Grafana environment they are using.
+Leave `name` empty to hide the banner. That is the default, and the UI stays unchanged.
+
+#### `name`
+
+Label shown on the banner, for example `Production` or `Staging`.
+Grafana renders the value as plain text.
+It trims whitespace, removes control characters, and keeps at most 64 characters.
+Default is empty.
+
+Set it with the `GF_ENVIRONMENT_NAME` environment variable.
+
+#### `color`
+
+Background color of the banner.
+Use a hex color (`#RGB` or `#RRGGBB`) or one of these names: `red`, `orange`, `amber`, `yellow`, `green`, `blue`, `purple`, `pink`, `gray`, `grey`, `black`, `white`.
+Grafana ignores any other value and uses the default warning color.
+Default is empty.
+
+Set it with the `GF_ENVIRONMENT_COLOR` environment variable.
+
+<hr />
+
 ### `[database]`
 
 Grafana needs a database to store users and dashboards (and other

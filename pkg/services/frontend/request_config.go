@@ -39,6 +39,7 @@ type FSRequestConfig struct {
 // NewFSRequestConfig creates a new FSRequestConfig from the global configuration.
 // This is used to create the base configuration at service startup.
 func NewFSRequestConfig(ctx context.Context, cfg *setting.Cfg, license licensing.Licensing, pluginsCDN *pluginscdn.Service, fullFrontendSettingsEnabled bool) (FSRequestConfig, error) {
+	environmentIndicator := cfg.EnvironmentIndicator.Sanitized()
 	frontendSettings := FSFrontendSettings{
 		AnalyticsConsoleReporting:            cfg.FrontendAnalyticsConsoleReporting,
 		PluginImportTelemetryPackages:        cfg.PluginImportTelemetryPackages,
@@ -71,6 +72,10 @@ func NewFSRequestConfig(ctx context.Context, cfg *setting.Cfg, license licensing
 		TrustedTypesDefaultPolicyEnabled:     (cfg.CSPEnabled && strings.Contains(cfg.CSPTemplate, "require-trusted-types-for")) || (cfg.CSPReportOnlyEnabled && strings.Contains(cfg.CSPReportOnlyTemplate, "require-trusted-types-for")),
 		VerifyEmailEnabled:                   cfg.VerifyEmailEnabled,
 		BuildInfo:                            getBuildInfo(license, cfg),
+		EnvironmentIndicator: dtos.FrontendSettingsEnvironmentIndicatorDTO{
+			Name:  environmentIndicator.Name,
+			Color: environmentIndicator.Color,
+		},
 	}
 
 	securitySection := cfg.SectionWithEnvOverrides("security")

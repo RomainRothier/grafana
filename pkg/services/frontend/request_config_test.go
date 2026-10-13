@@ -247,4 +247,18 @@ func TestNewFSRequestConfig(t *testing.T) {
 		assert.Equal(t, "https://cdn.example.com", config.FullFrontendSettings.PluginsCDNBaseURL)
 		assert.Equal(t, []string{"react-router-dom", "react-router"}, config.FullFrontendSettings.PluginImportTelemetryPackages)
 	})
+
+	t.Run("copies a sanitized environment indicator into the slim settings", func(t *testing.T) {
+		cfg := newCfg()
+		cfg.EnvironmentIndicator = setting.EnvironmentIndicatorSettings{
+			Name:  "Production",
+			Color: "blue",
+		}
+		license := &licensing.OSSLicensingService{Cfg: cfg}
+
+		config, err := NewFSRequestConfig(context.Background(), cfg, license, newPluginsCDN(), false)
+		require.NoError(t, err)
+		assert.Equal(t, "Production", config.EnvironmentIndicator.Name)
+		assert.Equal(t, "#0000ff", config.EnvironmentIndicator.Color)
+	})
 }

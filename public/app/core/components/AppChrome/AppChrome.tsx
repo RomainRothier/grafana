@@ -19,6 +19,11 @@ import { ScopesDashboards } from 'app/features/scopes/dashboards/ScopesDashboard
 import { AppChromeMenu } from './AppChromeMenu';
 import { type AppChromeService, DOCKED_LOCAL_STORAGE_KEY } from './AppChromeService';
 import {
+  ENVIRONMENT_INDICATOR_OVERLAY_HEIGHT,
+  EnvironmentIndicator,
+  hasEnvironmentIndicator,
+} from './EnvironmentIndicator/EnvironmentIndicator';
+import {
   ExtensionSidebar,
   MAX_EXTENSION_SIDEBAR_WIDTH,
   MIN_EXTENSION_SIDEBAR_WIDTH,
@@ -79,7 +84,14 @@ export function AppChrome({ children }: Props) {
   );
 
   const headerLevels = useChromeHeaderLevels();
-  const styles = useStyles2(getStyles, headerLevels, getChromeHeaderLevelHeight(), visualRefreshEnabled);
+  const showEnvironmentOverlay = state.chromeless && hasEnvironmentIndicator();
+  const styles = useStyles2(
+    getStyles,
+    headerLevels,
+    getChromeHeaderLevelHeight(),
+    visualRefreshEnabled,
+    showEnvironmentOverlay
+  );
   const contentSizeStyles = useStyles2(getContentSizeStyles, extensionSidebarWidth);
   const dragStyles = useStyles2(getDragStyles);
   const isSmallScreen = !useMediaQueryMinWidth('sm');
@@ -144,6 +156,7 @@ export function AppChrome({ children }: Props) {
         'main-view--chrome-hidden': state.chromeless,
       })}
     >
+      {showEnvironmentOverlay && <EnvironmentIndicator variant="overlay" />}
       {!state.chromeless && (
         <>
           <LinkButton
@@ -271,7 +284,13 @@ function useResponsiveDockedMegaMenu(chrome: AppChromeService) {
   }, [isLargeScreen, chrome, dockedMenuLocalStorageState]);
 }
 
-const getStyles = (theme: GrafanaTheme2, headerLevels: number, headerHeight: number, visualRefreshEnabled: boolean) => {
+const getStyles = (
+  theme: GrafanaTheme2,
+  headerLevels: number,
+  headerHeight: number,
+  visualRefreshEnabled: boolean,
+  environmentOverlay: boolean
+) => {
   return {
     content: css({
       label: 'page-content',
@@ -286,7 +305,7 @@ const getStyles = (theme: GrafanaTheme2, headerLevels: number, headerHeight: num
       overflow: 'hidden',
     }),
     contentChromeless: css({
-      paddingTop: 0,
+      paddingTop: environmentOverlay ? ENVIRONMENT_INDICATOR_OVERLAY_HEIGHT : 0,
     }),
     dockedMegaMenu: css({
       background: visualRefreshEnabled ? theme.colors.background.canvas : theme.colors.background.primary,

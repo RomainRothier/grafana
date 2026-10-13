@@ -276,6 +276,9 @@ export class GrafanaBootConfig {
 
   openFeatureContext: Record<string, unknown> = {};
 
+  /** Banner identifying this Grafana environment. Empty name hides it. */
+  environmentIndicator: { name: string; color: string } = { name: '', color: '' };
+
   constructor(
     options: BootData['settings'] & {
       bootData: BootData;

@@ -106,6 +106,7 @@ func GetBaseFrontendSettings(reqCtx *contextmodel.ReqContext, cfg *setting.Cfg, 
 		SharedWithMeFolderUID:            folder.SharedWithMeFolderUID,
 		RootFolderUID:                    accesscontrol.GeneralFolderUID,
 		LocalFileSystemAvailable:         cfg.LocalFileSystemAvailable,
+		EnvironmentIndicator:             environmentIndicatorDTO(cfg),
 		ProvisioningEnabled:              cfg.ProvisioningEnabled,
 		ReportingStaticContext:           cfg.ReportingStaticContext,
 		ExploreDefaultTimeOffset:         cfg.ExploreDefaultTimeOffset,
@@ -240,6 +241,11 @@ func GetBaseFrontendSettings(reqCtx *contextmodel.ReqContext, cfg *setting.Cfg, 
 	// [TODO] Restore namespace in the frontend service from baggage or context
 
 	return frontendSettings, nil
+}
+
+func environmentIndicatorDTO(cfg *setting.Cfg) dtos.FrontendSettingsEnvironmentIndicatorDTO {
+	indicator := cfg.EnvironmentIndicator.Sanitized()
+	return dtos.FrontendSettingsEnvironmentIndicatorDTO{Name: indicator.Name, Color: indicator.Color}
 }
 
 func isSupportBundlesEnabled(cfg *setting.Cfg) bool {
