@@ -392,6 +392,10 @@ const (
 	ActionSettingsRead  = "settings:read"
 	ActionSettingsWrite = "settings:write"
 
+	// Feature toggle actions. Toggles are instance-wide, same audience as settings.
+	ActionFeatureTogglesRead  = "featuretoggles:read"
+	ActionFeatureTogglesWrite = "featuretoggles:write"
+
 	// Datasources actions
 	ActionDatasourcesExplore = "datasources:explore"
 

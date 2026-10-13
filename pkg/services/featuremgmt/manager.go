@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"sync"
 
 	"github.com/grafana/grafana/pkg/infra/log"
+	"github.com/grafana/grafana/pkg/setting"
 )
 
 var (
@@ -13,17 +15,23 @@ var (
 )
 
 type FeatureManager struct {
+	mu       sync.RWMutex
 	isDevMod bool
+	cfg      *setting.Cfg
 
 	flags    map[string]*FeatureFlag
 	enabled  map[string]bool   // only the "on" values
 	startup  map[string]bool   // the explicit values registered at startup
+	runtime  map[string]bool   // overrides applied after startup; dropped on restart
 	warnings map[string]string // potential warnings about the flag
 	log      log.Logger
 }
 
 // This will merge the flags with the current configuration
 func (fm *FeatureManager) registerFlags(flags ...FeatureFlag) {
+	fm.mu.Lock()
+	defer fm.mu.Unlock()
+
 	for _, add := range flags {
 		if add.Name == "" {
 			continue // skip it with warning?
@@ -59,7 +67,7 @@ func (fm *FeatureManager) registerFlags(flags ...FeatureFlag) {
 	}
 
 	// This will evaluate all flags
-	fm.update()
+	fm.updateLocked()
 }
 
 // meetsRequirements checks if grafana is able to run the given feature due to dev mode or licensing requirements
@@ -72,12 +80,15 @@ func (fm *FeatureManager) meetsRequirements(ff *FeatureFlag) (bool, string) {
 }
 
 // Update
-func (fm *FeatureManager) update() {
+func (fm *FeatureManager) updateLocked() {
 	enabled := make(map[string]bool)
 	for _, flag := range fm.flags {
 		// if grafana cannot run the feature, omit metrics around it
 		ok, reason := fm.meetsRequirements(flag)
 		if !ok {
+			if fm.warnings == nil {
+				fm.warnings = map[string]string{}
+			}
 			fm.warnings[flag.Name] = reason
 			continue
 		}
@@ -99,16 +110,22 @@ func (fm *FeatureManager) update() {
 
 // IsEnabled checks if a feature is enabled
 func (fm *FeatureManager) IsEnabled(ctx context.Context, flag string) bool {
+	fm.mu.RLock()
+	defer fm.mu.RUnlock()
 	return fm.enabled[flag]
 }
 
 // IsEnabledGlobally checks if a feature is for all tenants
 func (fm *FeatureManager) IsEnabledGlobally(flag string) bool {
+	fm.mu.RLock()
+	defer fm.mu.RUnlock()
 	return fm.enabled[flag]
 }
 
 // GetEnabled returns a map containing only the features that are enabled
 func (fm *FeatureManager) GetEnabled(ctx context.Context) map[string]bool {
+	fm.mu.RLock()
+	defer fm.mu.RUnlock()
 	enabled := make(map[string]bool, len(fm.enabled))
 	for key, val := range fm.enabled {
 		if val {
@@ -120,6 +137,8 @@ func (fm *FeatureManager) GetEnabled(ctx context.Context) map[string]bool {
 
 // GetFlags returns all flag definitions
 func (fm *FeatureManager) GetFlags() []FeatureFlag {
+	fm.mu.RLock()
+	defer fm.mu.RUnlock()
 	v := make([]FeatureFlag, 0, len(fm.flags))
 	for _, value := range fm.flags {
 		v = append(v, *value)

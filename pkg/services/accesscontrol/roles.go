@@ -327,6 +327,26 @@ var (
 			{Action: ActionUsageStatsRead},
 		},
 	}
+
+	featureTogglesReaderRole = RoleDTO{
+		Name:        "fixed:featuretoggles:reader",
+		DisplayName: "Reader",
+		Description: "Read Grafana feature toggles.",
+		Group:       "Feature toggles",
+		Permissions: []Permission{
+			{Action: ActionFeatureTogglesRead},
+		},
+	}
+
+	featureTogglesWriterRole = RoleDTO{
+		Name:        "fixed:featuretoggles:writer",
+		DisplayName: "Writer",
+		Description: "Read and change Grafana feature toggles for the running process.",
+		Group:       "Feature toggles",
+		Permissions: ConcatPermissions(featureTogglesReaderRole.Permissions, []Permission{
+			{Action: ActionFeatureTogglesWrite},
+		}),
+	}
 )
 
 // FixedRoleRegistrations returns all OSS core role registrations declared by this package.
@@ -383,10 +403,20 @@ func FixedRoleRegistrations() []RoleRegistration {
 		Grants: []string{RoleGrafanaAdmin},
 	}
 
+	featureTogglesReader := RoleRegistration{
+		Role:   featureTogglesReaderRole,
+		Grants: []string{RoleGrafanaAdmin},
+	}
+	featureTogglesWriter := RoleRegistration{
+		Role:   featureTogglesWriterRole,
+		Grants: []string{RoleGrafanaAdmin},
+	}
+
 	return []RoleRegistration{
 		ldapReader, ldapWriter, orgUsersReader, orgUsersWriter,
 		settingsReader, statsReader, usersReader, usersWriter,
 		authenticationConfigWriter, generalAuthConfigWriter, smtpSettingsWriter, usageStatsReader,
+		featureTogglesReader, featureTogglesWriter,
 	}
 }
 
