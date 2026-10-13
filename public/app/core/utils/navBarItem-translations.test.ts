@@ -8,6 +8,7 @@ describe('navBarItem-translations', () => {
       ['alerts-history', 'History'],
       ['extensions', 'Extensions'],
       ['provisioning', 'Provisioning'],
+      ['grafana-labs', 'Grafana Labs'],
       ['observability', 'Observability'],
     ])('returns the %s title', (navId, title) => {
       expect(getNavTitle(navId)).toBe(title);
@@ -28,6 +29,7 @@ describe('navBarItem-translations', () => {
       ['notification-config', 'Manage contact points, notification policies, templates, and time intervals'],
       ['extensions', 'Extend the UI of plugins and Grafana'],
       ['provisioning', 'View and manage your provisioning connections'],
+      ['grafana-labs', 'Toggle feature flags for this running Grafana process'],
       [
         'observability',
         "Monitor infrastructure and applications in real time with Grafana Cloud's fully managed observability suite",

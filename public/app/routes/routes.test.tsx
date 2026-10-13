@@ -47,6 +47,18 @@ describe('admin route guards', () => {
     expect(getRouteRolesGuard(path)()).toEqual([]);
   });
 
+  it('rejects /labs without feature toggles read permission', () => {
+    contextSrv.user.permissions = {};
+
+    expect(getRouteRolesGuard('/labs')()).toEqual(['Reject']);
+  });
+
+  it('allows /labs with feature toggles read permission', () => {
+    contextSrv.user.permissions = { [AccessControlAction.FeatureTogglesRead]: true };
+
+    expect(getRouteRolesGuard('/labs')()).toEqual([]);
+  });
+
   it('allows /admin/users with org users read permission only', () => {
     contextSrv.user.permissions = { [AccessControlAction.OrgUsersRead]: true };
 

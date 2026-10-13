@@ -326,6 +326,17 @@ describe('buildStaticNavTree', () => {
       expect(cfg?.subTitle).toBe('Organization: Main Org.');
     });
 
+    it('shows Grafana Labs only with feature toggle read permission', () => {
+      setup({ permissions: [AccessControlAction.FeatureTogglesRead] });
+
+      const general = findById(findById(buildStaticNavTree(), NavID.cfg)?.children ?? [], NavID.cfgGeneral);
+      expect(findById(general?.children ?? [], 'grafana-labs')?.url).toBe('/labs');
+
+      setup();
+      const withoutPermission = findById(findById(buildStaticNavTree(), NavID.cfg)?.children ?? [], NavID.cfgGeneral);
+      expect(findById(withoutPermission?.children ?? [], 'grafana-labs')).toBeUndefined();
+    });
+
     it('hides the stats and license item on enterprise builds, where enterprise registers its own', () => {
       setup({
         orgRole: 'Admin',

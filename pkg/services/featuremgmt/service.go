@@ -23,9 +23,11 @@ var (
 func ProvideManagerService(cfg *setting.Cfg) (*FeatureManager, error) {
 	mgmt := &FeatureManager{
 		isDevMod: cfg.IsDevEnv(),
+		cfg:      cfg,
 		flags:    make(map[string]*FeatureFlag, 30),
 		enabled:  make(map[string]bool),
 		startup:  make(map[string]bool),
+		runtime:  make(map[string]bool),
 		warnings: make(map[string]string),
 		log:      log.New("featuremgmt"),
 	}
@@ -52,7 +54,9 @@ func ProvideManagerService(cfg *setting.Cfg) (*FeatureManager, error) {
 	}
 
 	// update the values
-	mgmt.update()
+	mgmt.mu.Lock()
+	mgmt.updateLocked()
+	mgmt.mu.Unlock()
 
 	// Log the enabled feature toggles at startup
 	enabled := slices.Sorted(maps.Keys(mgmt.enabled))

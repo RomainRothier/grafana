@@ -44,6 +44,16 @@ const ADMIN_GENERAL_CHILDREN: NavEntryBuilder[] = [
     }),
   },
   {
+    when: () => contextSrv.hasPermission(AccessControlAction.FeatureTogglesRead),
+    build: () => ({
+      text: 'Grafana Labs',
+      subTitle: 'Toggle feature flags for this running Grafana process',
+      id: 'grafana-labs',
+      url: '/labs',
+      icon: 'flask',
+    }),
+  },
+  {
     // The bootdata permissions map collapses every settings:read scope into one
     // boolean, so an OAuth/SAML-scoped grant passes here even though the page
     // requires settings:*. Accepted for now: the scoped-permissions fetch (the
