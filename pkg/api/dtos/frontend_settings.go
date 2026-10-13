@@ -162,6 +162,13 @@ type FrontendSettingsWhitelabelingDTO struct {
 	PublicDashboard    *FrontendSettingsPublicDashboardConfigDTO `json:"publicDashboard,omitempty"`
 }
 
+// FrontendSettingsEnvironmentIndicatorDTO is the optional environment banner.
+// Name is plain text. Color is empty or a sanitized hex color.
+type FrontendSettingsEnvironmentIndicatorDTO struct {
+	Name  string `json:"name"`
+	Color string `json:"color"`
+}
+
 type FrontendSettingsSqlConnectionLimitsDTO struct {
 	MaxOpenConns    int `json:"maxOpenConns"`
 	MaxIdleConns    int `json:"maxIdleConns"`
@@ -327,4 +334,6 @@ type FrontendSettingsDTO struct {
 	ListScopesEndpoint          string            `json:"listScopesEndpoint"`
 	ListDashboardScopesEndpoint string            `json:"listDashboardScopesEndpoint"`
 	OpenFeatureContext          map[string]string `json:"openFeatureContext"`
+
+	EnvironmentIndicator FrontendSettingsEnvironmentIndicatorDTO `json:"environmentIndicator"`
 }

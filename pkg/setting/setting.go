@@ -481,6 +481,10 @@ type Cfg struct {
 
 	LocalFileSystemAvailable bool
 
+	// EnvironmentIndicator is the optional banner shown in the app chrome.
+	// An empty Name leaves the UI unchanged.
+	EnvironmentIndicator EnvironmentIndicatorSettings
+
 	// Analytics
 	CheckForGrafanaUpdates               bool
 	CheckForPluginUpdates                bool
@@ -1594,6 +1598,7 @@ func (cfg *Cfg) parseINIFile(iniFile *ini.File) error {
 	cfg.StackID = valueAsString(iniFile.Section("environment"), "stack_id", "")
 	cfg.Slug = valueAsString(iniFile.Section("environment"), "stack_slug", "")
 	cfg.LocalFileSystemAvailable = iniFile.Section("environment").Key("local_file_system_available").MustBool(true)
+	cfg.readEnvironmentIndicatorSettings(iniFile)
 	cfg.InstanceName = valueAsString(iniFile.Section(""), "instance_name", "unknown_instance_name")
 	plugins := valueAsString(iniFile.Section("paths"), "plugins", "")
 	bundledPlugins := valueAsString(iniFile.Section("paths"), "bundled_plugins", "data/plugins-bundled")

@@ -336,6 +336,15 @@ export interface GrafanaConfig {
   pluginRestrictedAPIsBlockList?: Record<string, string[]>;
   openFeatureContext: Record<string, unknown>;
 
+  /**
+   * Optional banner identifying which environment this Grafana is.
+   * Empty `name` means the banner is hidden. `color` is empty or a sanitized hex color.
+   */
+  environmentIndicator?: {
+    name: string;
+    color: string;
+  };
+
   // The namespace to use for kubernetes apiserver requests
   namespace: string;
   caching: {

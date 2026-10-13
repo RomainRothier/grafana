@@ -50,4 +50,6 @@ type FSFrontendSettings struct {
 	ReportingStaticContext           map[string]string `json:"reportingStaticContext,omitempty"`
 
 	LoginError string `json:"loginError,omitempty"`
+
+	EnvironmentIndicator dtos.FrontendSettingsEnvironmentIndicatorDTO `json:"environmentIndicator,omitempty"`
 }
