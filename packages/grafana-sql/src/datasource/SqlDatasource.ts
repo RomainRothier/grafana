@@ -34,6 +34,7 @@ import { SqlQueryEditorLazy } from '../components/QueryEditorLazy';
 import { MACRO_NAMES } from '../constants';
 import { type DB, type SQLQuery, type SQLOptions, type SqlQueryModel, QueryFormat, type SQLDialect } from '../types';
 import migrateAnnotation from '../utils/migration';
+import { getSqlMacroError } from '../utils/sqlMacros';
 
 export abstract class SqlDatasource extends DataSourceWithBackend<SQLQuery, SQLOptions> {
   uid: string;
@@ -102,7 +103,7 @@ export abstract class SqlDatasource extends DataSourceWithBackend<SQLQuery, SQLO
         const expandedQuery = {
           ...query,
           datasource: this.getRef(),
-          rawSql: this.templateSrv.replace(query.rawSql, scopedVars, this.interpolateVariable),
+          rawSql: this.replaceAndValidateSqlMacros(query.rawSql, scopedVars),
           rawQuery: true,
         };
         return expandedQuery;
@@ -119,7 +120,7 @@ export abstract class SqlDatasource extends DataSourceWithBackend<SQLQuery, SQLO
     return {
       refId: target.refId,
       datasource: this.getRef(),
-      rawSql: this.templateSrv.replace(target.rawSql, scopedVars, this.interpolateVariable),
+      rawSql: this.replaceAndValidateSqlMacros(target.rawSql, scopedVars),
       format: target.format,
     };
   }
@@ -131,6 +132,11 @@ export abstract class SqlDatasource extends DataSourceWithBackend<SQLQuery, SQLO
     if (!!databaseIssue) {
       const error = new Error(databaseIssue);
       return throwError(() => error);
+    }
+
+    const macroIssue = this.checkForSqlMacroIssue(request);
+    if (macroIssue) {
+      return throwError(() => new Error(macroIssue));
     }
 
     request.targets.forEach((target) => {
@@ -183,6 +189,28 @@ export abstract class SqlDatasource extends DataSourceWithBackend<SQLQuery, SQLO
     return;
   }
 
+  private checkForSqlMacroIssue(request: DataQueryRequest<SQLQuery>) {
+    for (const target of request.targets) {
+      if (target.hide) {
+        continue;
+      }
+      const macroError = getSqlMacroError(target.rawSql);
+      if (macroError) {
+        return macroError;
+      }
+    }
+    return;
+  }
+
+  private replaceAndValidateSqlMacros(rawSql: string | undefined, scopedVars: ScopedVars) {
+    const interpolated = this.templateSrv.replace(rawSql, scopedVars, this.interpolateVariable);
+    const macroError = getSqlMacroError(interpolated);
+    if (macroError) {
+      throw new Error(macroError);
+    }
+    return interpolated;
+  }
+
   async metricFindQuery(query: string, options?: LegacyMetricFindQueryOptions): Promise<MetricFindValue[]> {
     const range = options?.range;
     if (range == null) {
@@ -200,7 +228,7 @@ export abstract class SqlDatasource extends DataSourceWithBackend<SQLQuery, SQLO
       ...getSearchFilterScopedVar({ query, wildcardChar: '%', options }),
     };
 
-    const rawSql = this.templateSrv.replace(query, scopedVars, this.interpolateVariable);
+    const rawSql = this.replaceAndValidateSqlMacros(query, scopedVars);
 
     const interpolatedQuery: SQLQuery = {
       refId: refId,
@@ -209,14 +237,14 @@ export abstract class SqlDatasource extends DataSourceWithBackend<SQLQuery, SQLO
       format: QueryFormat.Table,
     };
 
-    // NOTE: we can remove this try-catch when https://github.com/grafana/grafana/issues/82250
-    // is fixed.
     let response;
     try {
       response = await this.runMetaQuery(interpolatedQuery, range);
     } catch (error) {
-      console.error(error);
-      throw new Error('error when executing the sql query');
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error(error instanceof Object && 'message' in error ? String(error.message) : String(error));
     }
     return this.getResponseParser().transformMetricFindResponse(response);
   }
@@ -248,6 +276,9 @@ export abstract class SqlDatasource extends DataSourceWithBackend<SQLQuery, SQLO
         .pipe(
           map((res: FetchResponse<BackendDataSourceResponse>) => {
             const rsp = toDataQueryResponse(res, queries);
+            if (rsp.error) {
+              throw new Error(rsp.error.message ?? 'SQL query failed');
+            }
             return rsp.data[0] ?? { fields: [] };
           })
         )
