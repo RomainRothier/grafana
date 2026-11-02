@@ -62,6 +62,19 @@ func TestGetBaseFrontendSettings(t *testing.T) {
 		assert.Equal(t, []string{"custom-router", "custom-history"}, settings.PluginImportTelemetryPackages)
 	})
 
+	t.Run("maps the environment banner from config", func(t *testing.T) {
+		cfg := setting.NewCfg()
+		cfg.EnvironmentBannerLabel = "PROD"
+		cfg.EnvironmentBannerColor = "red"
+
+		license := &licensing.OSSLicensingService{Cfg: cfg}
+
+		settings, err := GetBaseFrontendSettings(newTestReqContext(), cfg, license, nil)
+		require.NoError(t, err)
+		assert.Equal(t, "PROD", settings.EnvironmentBannerLabel)
+		assert.Equal(t, "red", settings.EnvironmentBannerColor)
+	})
+
 	t.Run("enables trusted types policy when CSP template requires it", func(t *testing.T) {
 		cfg := setting.NewCfg()
 		cfg.CSPEnabled = true

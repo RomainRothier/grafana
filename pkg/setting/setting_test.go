@@ -789,6 +789,41 @@ func TestDashboardDefaultPreload(t *testing.T) {
 	})
 }
 
+func TestEnvironmentBannerSettings(t *testing.T) {
+	t.Run("is disabled with the default colour when unset", func(t *testing.T) {
+		cfg, err := NewCfgFromBytes([]byte(``))
+		require.NoError(t, err)
+		require.Empty(t, cfg.EnvironmentBannerLabel)
+		require.Equal(t, "red", cfg.EnvironmentBannerColor)
+	})
+
+	t.Run("reads a configured label and normalises the colour", func(t *testing.T) {
+		cfg, err := NewCfgFromBytes([]byte("[environment]\nbanner_label = \" PROD \"\nbanner_color = \" Green \""))
+		require.NoError(t, err)
+		require.Equal(t, "PROD", cfg.EnvironmentBannerLabel)
+		require.Equal(t, "green", cfg.EnvironmentBannerColor)
+	})
+
+	t.Run("falls back to the default colour for values outside the allowlist", func(t *testing.T) {
+		for _, color := range []string{"#ff0000", "red; background: url(x)", "pink"} {
+			cfg, err := NewCfgFromBytes([]byte("[environment]\nbanner_label = STAGING\nbanner_color = " + color))
+			require.NoError(t, err)
+			require.Equal(t, "red", cfg.EnvironmentBannerColor, color)
+		}
+	})
+
+	t.Run("can be overridden by environment variables", func(t *testing.T) {
+		t.Setenv("GF_ENVIRONMENT_BANNER_LABEL", "STAGING")
+		t.Setenv("GF_ENVIRONMENT_BANNER_COLOR", "orange")
+
+		cfg := NewCfg()
+		err := cfg.Load(CommandLineArgs{HomePath: "../../"})
+		require.NoError(t, err)
+		require.Equal(t, "STAGING", cfg.EnvironmentBannerLabel)
+		require.Equal(t, "orange", cfg.EnvironmentBannerColor)
+	})
+}
+
 func TestDynamicSection(t *testing.T) {
 	t.Parallel()
 

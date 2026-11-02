@@ -322,6 +322,9 @@ type FrontendSettingsDTO struct {
 
 	LocalFileSystemAvailable bool `json:"localFileSystemAvailable"`
 
+	EnvironmentBannerLabel string `json:"environmentBannerLabel,omitempty"`
+	EnvironmentBannerColor string `json:"environmentBannerColor,omitempty"`
+
 	ProvisioningEnabled bool `json:"provisioningEnabled"`
 	// Experimental Scope settings
 	ListScopesEndpoint          string            `json:"listScopesEndpoint"`

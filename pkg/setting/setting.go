@@ -15,6 +15,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -480,6 +481,9 @@ type Cfg struct {
 	Slug    string
 
 	LocalFileSystemAvailable bool
+
+	EnvironmentBannerLabel string
+	EnvironmentBannerColor string
 
 	// Analytics
 	CheckForGrafanaUpdates               bool
@@ -1594,6 +1598,7 @@ func (cfg *Cfg) parseINIFile(iniFile *ini.File) error {
 	cfg.StackID = valueAsString(iniFile.Section("environment"), "stack_id", "")
 	cfg.Slug = valueAsString(iniFile.Section("environment"), "stack_slug", "")
 	cfg.LocalFileSystemAvailable = iniFile.Section("environment").Key("local_file_system_available").MustBool(true)
+	cfg.readEnvironmentBannerSettings(iniFile.Section("environment"))
 	cfg.InstanceName = valueAsString(iniFile.Section(""), "instance_name", "unknown_instance_name")
 	plugins := valueAsString(iniFile.Section("paths"), "plugins", "")
 	bundledPlugins := valueAsString(iniFile.Section("paths"), "bundled_plugins", "data/plugins-bundled")
@@ -2414,6 +2419,25 @@ func (cfg *Cfg) readServerSettings(iniFile *ini.File) error {
 	}
 
 	return nil
+}
+
+// environmentBannerColors must stay in sync with the colour map in the frontend EnvironmentBanner
+// component; only these names reach the browser so the value is never used as raw CSS.
+var environmentBannerColors = []string{"red", "orange", "yellow", "green", "blue", "purple"}
+
+const defaultEnvironmentBannerColor = "red"
+
+func (cfg *Cfg) readEnvironmentBannerSettings(section *ini.Section) {
+	cfg.EnvironmentBannerLabel = strings.TrimSpace(valueAsString(section, "banner_label", ""))
+
+	color := strings.ToLower(strings.TrimSpace(valueAsString(section, "banner_color", defaultEnvironmentBannerColor)))
+	if !slices.Contains(environmentBannerColors, color) {
+		if color != "" {
+			cfg.Logger.Warn("[environment] banner_color is not supported, falling back to default", "value", color, "default", defaultEnvironmentBannerColor, "supported", environmentBannerColors)
+		}
+		color = defaultEnvironmentBannerColor
+	}
+	cfg.EnvironmentBannerColor = color
 }
 
 // readFrontendDevSettings resolves the frontend bundler's dev server origin. It stays empty
