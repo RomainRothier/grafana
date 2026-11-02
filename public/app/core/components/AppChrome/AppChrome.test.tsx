@@ -16,10 +16,12 @@ import { backendSrv } from '../../services/backend_srv';
 import { Page } from '../Page/Page';
 
 import { AppChrome, EXTENSION_SIDEBAR_FLOATING_TESTID } from './AppChrome';
+import { ENVIRONMENT_BANNER_HEIGHT } from './EnvironmentBanner';
 import {
   type ExtensionSidebarContextType,
   useExtensionSidebarContext,
 } from './ExtensionSidebar/ExtensionSidebarProvider';
+import { getChromeHeaderLevelHeight } from './TopBar/useChromeHeaderHeight';
 
 jest.mock('@grafana/runtime', () => ({
   ...jest.requireActual('@grafana/runtime'),
@@ -149,6 +151,49 @@ describe('AppChrome', () => {
     });
     waitFor(() => {
       expect(screen.queryByRole('link', { name: 'Skip to main content' })).not.toBeInTheDocument();
+    });
+  });
+
+  describe('environment banner', () => {
+    const originalLabel = config.environmentBannerLabel;
+    const getContentPaddingTop = () =>
+      parseFloat(getComputedStyle(document.getElementById('pageContent')!.parentElement!.parentElement!).paddingTop);
+
+    afterEach(() => {
+      config.environmentBannerLabel = originalLabel;
+    });
+
+    it('does not render a banner or offset the content when not configured', async () => {
+      config.environmentBannerLabel = undefined;
+      setup(<Page navId="child1">Children</Page>);
+
+      await screen.findByRole('link', { name: 'Skip to main content' });
+      expect(screen.queryByTestId('environment-banner')).not.toBeInTheDocument();
+      expect(getContentPaddingTop()).toBe(getChromeHeaderLevelHeight());
+    });
+
+    it('renders the banner in the header and offsets the content by its height when configured', async () => {
+      config.environmentBannerLabel = 'PROD';
+      setup(<Page navId="child1">Children</Page>);
+
+      const banner = await screen.findByTestId('environment-banner');
+      expect(banner).toHaveTextContent('PROD');
+      expect(screen.getByRole('banner')).toContainElement(banner);
+      expect(getContentPaddingTop()).toBe(getChromeHeaderLevelHeight() + ENVIRONMENT_BANNER_HEIGHT);
+    });
+
+    it('does not render the banner on chromeless pages', async () => {
+      config.environmentBannerLabel = 'PROD';
+      const { context } = setup(<Page navId="child1">Children</Page>);
+      await screen.findByTestId('environment-banner');
+
+      act(() => {
+        context.chrome.update({ chromeless: true });
+      });
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('environment-banner')).not.toBeInTheDocument();
+      });
     });
   });
 

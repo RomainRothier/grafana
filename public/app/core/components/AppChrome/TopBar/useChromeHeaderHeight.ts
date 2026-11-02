@@ -5,6 +5,7 @@ import { useGrafana } from 'app/core/context/GrafanaContext';
 import { useMediaQueryMinWidth } from 'app/core/hooks/useMediaQueryMinWidth';
 
 import { type AppChromeState } from '../AppChromeService';
+import { getEnvironmentBannerHeight } from '../EnvironmentBanner';
 import { useExtensionSidebarContext } from '../ExtensionSidebar/ExtensionSidebarProvider';
 
 /**
@@ -85,7 +86,11 @@ export function useChromeHeaderHeight() {
     return 0;
   }
 
-  return levels * getChromeHeaderLevelHeight();
+  if (levels === 0) {
+    return 0;
+  }
+
+  return levels * getChromeHeaderLevelHeight() + getEnvironmentBannerHeight();
 }
 
 /**

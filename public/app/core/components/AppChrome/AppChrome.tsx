@@ -18,6 +18,7 @@ import { ScopesDashboards } from 'app/features/scopes/dashboards/ScopesDashboard
 
 import { AppChromeMenu } from './AppChromeMenu';
 import { type AppChromeService, DOCKED_LOCAL_STORAGE_KEY } from './AppChromeService';
+import { EnvironmentBanner, getEnvironmentBannerHeight } from './EnvironmentBanner';
 import {
   ExtensionSidebar,
   MAX_EXTENSION_SIDEBAR_WIDTH,
@@ -79,7 +80,13 @@ export function AppChrome({ children }: Props) {
   );
 
   const headerLevels = useChromeHeaderLevels();
-  const styles = useStyles2(getStyles, headerLevels, getChromeHeaderLevelHeight(), visualRefreshEnabled);
+  const styles = useStyles2(
+    getStyles,
+    headerLevels,
+    getChromeHeaderLevelHeight(),
+    visualRefreshEnabled,
+    getEnvironmentBannerHeight()
+  );
   const contentSizeStyles = useStyles2(getContentSizeStyles, extensionSidebarWidth);
   const dragStyles = useStyles2(getDragStyles);
   const isSmallScreen = !useMediaQueryMinWidth('sm');
@@ -160,6 +167,7 @@ export function AppChrome({ children }: Props) {
             <MegaMenu className={styles.dockedMegaMenu} onClose={() => chrome.setMegaMenuOpen(false)} />
           )}
           <header className={cx(styles.topNav, menuDockedAndOpen && styles.topNavMenuDocked)}>
+            <EnvironmentBanner />
             <SingleTopBar
               sectionNav={state.sectionNav.node}
               pageNav={state.pageNav}
@@ -271,13 +279,19 @@ function useResponsiveDockedMegaMenu(chrome: AppChromeService) {
   }, [isLargeScreen, chrome, dockedMenuLocalStorageState]);
 }
 
-const getStyles = (theme: GrafanaTheme2, headerLevels: number, headerHeight: number, visualRefreshEnabled: boolean) => {
+const getStyles = (
+  theme: GrafanaTheme2,
+  headerLevels: number,
+  headerHeight: number,
+  visualRefreshEnabled: boolean,
+  bannerHeight: number
+) => {
   return {
     content: css({
       label: 'page-content',
       display: 'flex',
       flexDirection: 'column',
-      paddingTop: headerLevels * headerHeight,
+      paddingTop: headerLevels * headerHeight + bannerHeight,
       flexGrow: 1,
       height: 'auto',
     }),
@@ -305,7 +319,7 @@ const getStyles = (theme: GrafanaTheme2, headerLevels: number, headerHeight: num
     }),
     scopesDashboardsContainer: css({
       position: 'fixed',
-      height: `calc(100% - ${headerHeight}px)`,
+      height: `calc(100% - ${headerHeight + bannerHeight}px)`,
       zIndex: 1,
     }),
     scopesDashboardsContainerDocked: css(
@@ -370,14 +384,14 @@ const getStyles = (theme: GrafanaTheme2, headerLevels: number, headerHeight: num
       // the `Resizeable` component overrides the needed `position` and `height`
       // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
       position: 'fixed !important' as 'fixed',
-      top: headerHeight,
+      top: headerHeight + bannerHeight,
       bottom: 0,
       zIndex: theme.zIndex.navbarFixed + 1,
       right: 0,
     }),
     sidebarContainerFloating: css({
       position: 'fixed',
-      top: headerLevels * headerHeight,
+      top: headerLevels * headerHeight + bannerHeight,
       bottom: 0,
       left: 0,
       right: 0,
