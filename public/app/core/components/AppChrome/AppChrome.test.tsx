@@ -182,13 +182,13 @@ describe('AppChrome', () => {
       expect(getContentPaddingTop()).toBe(getChromeHeaderLevelHeight() + ENVIRONMENT_BANNER_HEIGHT);
     });
 
-    it('does not render the banner on chromeless pages', async () => {
+    it('does not render the banner in full kiosk mode', async () => {
       config.environmentBannerLabel = 'PROD';
       const { context } = setup(<Page navId="child1">Children</Page>);
       await screen.findByTestId('environment-banner');
 
       act(() => {
-        context.chrome.update({ chromeless: true });
+        context.chrome.update({ kioskMode: KioskMode.Full });
       });
 
       await waitFor(() => {
